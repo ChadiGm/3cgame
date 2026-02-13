@@ -324,6 +324,7 @@ namespace WaterBlob
             vel.enabled = true;
             vel.y = new ParticleSystem.MinMaxCurve(0.75f, 1.8f);
             vel.x = new ParticleSystem.MinMaxCurve(-0.2f, 0.2f);
+            vel.z = new ParticleSystem.MinMaxCurve(0f, 0f);
 
             ParticleSystem.ColorOverLifetimeModule col = ps.colorOverLifetime;
             col.enabled = true;

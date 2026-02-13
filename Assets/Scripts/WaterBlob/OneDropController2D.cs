@@ -18,7 +18,7 @@ namespace WaterBlob
         [SerializeField, Min(0f)] private float acceleration = 55f;
         [SerializeField, Min(0f)] private float jumpForce = 12f;
         [SerializeField, Min(0f)] private float postJumpGroundIgnoreTime = 0.08f;
-        [SerializeField, Min(0f)] private float minJumpInterval = 0.08f;
+        [SerializeField, Min(0f)] private float minJumpInterval = 0.22f; // FIX: increased from 0.08 to prevent jump spamming
 
         [Header("Slide Dash")]
         [SerializeField, Min(0f)] private float doubleTapWindow = 0.25f;
@@ -200,11 +200,15 @@ namespace WaterBlob
                 }
             }
 
+            // FIX: Only cancel horizontal velocity for edge stick when NOT actively providing input
             if (cancelHorizontalForEdgeStick && !grounded && !isClimbing)
             {
-                Vector2 v = rb.linearVelocity;
-                v.x = 0f;
-                rb.linearVelocity = v;
+                if (Mathf.Abs(inputX) < 0.1f)
+                {
+                    Vector2 v = rb.linearVelocity;
+                    v.x = 0f;
+                    rb.linearVelocity = v;
+                }
                 cancelHorizontalForEdgeStick = false;
             }
 
@@ -223,6 +227,12 @@ namespace WaterBlob
         private void OnCollisionStay2D(Collision2D collision)
         {
             if (collision == null || grounded || isClimbing)
+            {
+                return;
+            }
+
+            // FIX: Don't trigger edge-stick cancellation if the player is actively moving
+            if (Mathf.Abs(inputX) > 0.1f)
             {
                 return;
             }
@@ -424,13 +434,12 @@ namespace WaterBlob
             jumpPulse = 1f;
             jumpIntervalTimer = minJumpInterval;
             postJumpGroundIgnoreTimer = postJumpGroundIgnoreTime;
-            Vector2 v = rb.linearVelocity;
-            if (v.y < 0f)
-            {
-                v.y = 0f;
-            }
 
+            // FIX: Always reset Y velocity to 0 before jumping to prevent stacking impulses
+            Vector2 v = rb.linearVelocity;
+            v.y = 0f;
             rb.linearVelocity = v;
+
             rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
         }
 
@@ -441,13 +450,11 @@ namespace WaterBlob
             wallDetachPulse = 1f;
             wallDetachDirection = away;
 
+            // FIX: Always reset Y velocity before wall jump
             Vector2 v = rb.linearVelocity;
-            if (v.y < 0f)
-            {
-                v.y = 0f;
-            }
-
+            v.y = 0f;
             rb.linearVelocity = v;
+
             rb.AddForce(new Vector2(away * wallJumpHorizontalForce, wallJumpVerticalForce), ForceMode2D.Impulse);
             facingSign = away;
         }
