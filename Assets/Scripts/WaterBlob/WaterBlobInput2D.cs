@@ -15,14 +15,32 @@ namespace WaterBlob
 
         public Vector2 Move { get; private set; }
         public bool JumpHeld { get; private set; }
+        public bool SlideHeld { get; private set; }
+        public bool DashHeld { get; private set; }
 
         private bool jumpQueued;
+        private bool slideQueued;
+        private bool dashQueued;
         private float smoothedMoveX;
 
         public bool ConsumeJumpPressed()
         {
             bool pressed = jumpQueued;
             jumpQueued = false;
+            return pressed;
+        }
+
+        public bool ConsumeSlidePressed()
+        {
+            bool pressed = slideQueued;
+            slideQueued = false;
+            return pressed;
+        }
+
+        public bool ConsumeDashPressed()
+        {
+            bool pressed = dashQueued;
+            dashQueued = false;
             return pressed;
         }
 
@@ -36,6 +54,10 @@ namespace WaterBlob
             float rawMoveX = 0f;
             bool jumpDown = false;
             bool jumpHold = false;
+            bool slideDown = false;
+            bool slideHold = false;
+            bool dashDown = false;
+            bool dashHold = false;
 
 #if ENABLE_INPUT_SYSTEM
             Keyboard keyboard = Keyboard.current;
@@ -53,6 +75,10 @@ namespace WaterBlob
 
                 jumpDown |= keyboard.spaceKey.wasPressedThisFrame;
                 jumpHold |= keyboard.spaceKey.isPressed;
+                slideDown |= keyboard.leftCtrlKey.wasPressedThisFrame;
+                slideHold |= keyboard.leftCtrlKey.isPressed;
+                dashDown |= keyboard.leftShiftKey.wasPressedThisFrame;
+                dashHold |= keyboard.leftShiftKey.isPressed;
             }
 
             Gamepad gamepad = Gamepad.current;
@@ -71,11 +97,19 @@ namespace WaterBlob
 
                 jumpDown |= gamepad.buttonSouth.wasPressedThisFrame;
                 jumpHold |= gamepad.buttonSouth.isPressed;
+                slideDown |= gamepad.leftShoulder.wasPressedThisFrame;
+                slideHold |= gamepad.leftShoulder.isPressed;
+                dashDown |= gamepad.rightShoulder.wasPressedThisFrame;
+                dashHold |= gamepad.rightShoulder.isPressed;
             }
 #else
             rawMoveX = Input.GetAxisRaw("Horizontal");
             jumpDown = Input.GetButtonDown("Jump");
             jumpHold = Input.GetButton("Jump");
+            slideDown = Input.GetKeyDown(KeyCode.LeftControl);
+            slideHold = Input.GetKey(KeyCode.LeftControl);
+            dashDown = Input.GetKeyDown(KeyCode.LeftShift);
+            dashHold = Input.GetKey(KeyCode.LeftShift);
 #endif
 
             rawMoveX = Mathf.Clamp(rawMoveX, -1f, 1f);
@@ -84,10 +118,22 @@ namespace WaterBlob
 
             Move = new Vector2(smoothedMoveX, 0f);
             JumpHeld = jumpHold;
+            SlideHeld = slideHold;
+            DashHeld = dashHold;
 
             if (jumpDown)
             {
                 jumpQueued = true;
+            }
+
+            if (slideDown)
+            {
+                slideQueued = true;
+            }
+
+            if (dashDown)
+            {
+                dashQueued = true;
             }
         }
     }
