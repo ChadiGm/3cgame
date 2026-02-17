@@ -5,7 +5,7 @@ using UnityEngine.Rendering;
 namespace WaterBlob
 {
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(WaterBlobCharacter2D))]
+    [RequireComponent(typeof(Rigidbody2D))]
     public class WaterBlobGooglyEyes2D : MonoBehaviour
     {
         [SerializeField] private WaterBlobCharacter2D blob;
@@ -37,6 +37,8 @@ namespace WaterBlob
         private Transform faceRoot;
         private Transform leftPupil;
         private Transform rightPupil;
+        private Rigidbody2D targetBody;
+        private float radius = 1f;
 
         private readonly List<Material> runtimeMaterials = new();
 
@@ -46,6 +48,9 @@ namespace WaterBlob
             {
                 blob = GetComponent<WaterBlobCharacter2D>();
             }
+
+            targetBody = ResolveTargetBody();
+            radius = ResolveRadius();
 
             BuildFace();
         }
@@ -57,26 +62,30 @@ namespace WaterBlob
 
         private void LateUpdate()
         {
-            if (blob == null || blob.CoreBody == null || faceRoot == null)
+            if (targetBody == null)
+            {
+                targetBody = ResolveTargetBody();
+            }
+
+            if (targetBody == null || faceRoot == null)
             {
                 return;
             }
 
-            Rigidbody2D core = blob.CoreBody;
-            float radius = Mathf.Max(0.1f, blob.Radius);
+            radius = ResolveRadius();
             float movementSign = invertEyeDirection ? -1f : 1f;
-            float movementTilt = movementSign * core.linearVelocity.x * eyeDirectionalLeanBoost;
-            float coreAnchorContribution = core.rotation * anchorRotationInfluence;
+            float movementTilt = movementSign * targetBody.linearVelocity.x * eyeDirectionalLeanBoost;
+            float coreAnchorContribution = targetBody.rotation * anchorRotationInfluence;
             float anchorAngle = coreAnchorContribution + movementTilt * anchorRotationInfluence * 0.4f;
             anchorAngle = Mathf.Clamp(anchorAngle, -maxEyeTiltDeg, maxEyeTiltDeg);
             Vector2 baseOffset = normalizedOffset * radius;
             Vector2 orientedOffset = (Vector2)(Quaternion.Euler(0f, 0f, anchorAngle) * (Vector3)baseOffset);
 
-            Vector3 targetPosition = new(core.position.x + orientedOffset.x, core.position.y + orientedOffset.y, depth);
+            Vector3 targetPosition = new(targetBody.position.x + orientedOffset.x, targetBody.position.y + orientedOffset.y, depth);
             float anchorLerp = DampedLerp(anchorFollow, Time.deltaTime);
             faceRoot.position = Vector3.Lerp(faceRoot.position, targetPosition, anchorLerp);
 
-            float coreRotationContribution = core.rotation * eyeRotationInfluence;
+            float coreRotationContribution = targetBody.rotation * eyeRotationInfluence;
             float desiredEyeAngle = coreRotationContribution + movementTilt;
             desiredEyeAngle = Mathf.Clamp(Mathf.DeltaAngle(0f, desiredEyeAngle), -maxEyeTiltDeg, maxEyeTiltDeg);
 
@@ -84,7 +93,7 @@ namespace WaterBlob
             float nextEyeAngle = Mathf.LerpAngle(currentEyeAngle, desiredEyeAngle, DampedLerp(eyeRotationFollow, Time.deltaTime));
             faceRoot.rotation = Quaternion.Euler(0f, 0f, nextEyeAngle);
 
-            Vector2 velocityLook = core.linearVelocity * lookVelocityScale;
+            Vector2 velocityLook = targetBody.linearVelocity * lookVelocityScale;
             Vector2 desiredLook = velocityLook.sqrMagnitude > 0.0001f ? velocityLook.normalized * pupilRange : Vector2.zero;
 
             UpdatePupil(leftPupil, desiredLook, 0.3f);
@@ -93,7 +102,7 @@ namespace WaterBlob
 
         private void BuildFace()
         {
-            if (blob == null)
+            if (targetBody == null)
             {
                 return;
             }
@@ -228,6 +237,45 @@ namespace WaterBlob
         private static float DampedLerp(float sharpness, float dt)
         {
             return 1f - Mathf.Exp(-Mathf.Max(0.0001f, sharpness) * dt);
+        }
+
+        private Rigidbody2D ResolveTargetBody()
+        {
+            if (blob != null && blob.CoreBody != null)
+            {
+                return blob.CoreBody;
+            }
+
+            Rigidbody2D localBody = GetComponent<Rigidbody2D>();
+            if (localBody != null)
+            {
+                return localBody;
+            }
+
+            return null;
+        }
+
+        private float ResolveRadius()
+        {
+            if (blob != null)
+            {
+                return Mathf.Max(0.1f, blob.Radius);
+            }
+
+            CircleCollider2D circle = GetComponent<CircleCollider2D>();
+            if (circle != null)
+            {
+                return Mathf.Max(0.1f, circle.radius * Mathf.Max(transform.lossyScale.x, transform.lossyScale.y));
+            }
+
+            Collider2D col = GetComponent<Collider2D>();
+            if (col != null)
+            {
+                Bounds bounds = col.bounds;
+                return Mathf.Max(0.1f, Mathf.Max(bounds.extents.x, bounds.extents.y));
+            }
+
+            return 1f;
         }
 
         private void CleanupFace()

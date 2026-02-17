@@ -1,0 +1,520 @@
+﻿\documentclass[12pt,a4paper]{article}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{tabularx}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{tcolorbox}
+\usepackage{multicol}
+\usepackage{tikz}
+
+% Geometry
+\geometry{top=2.5cm,bottom=2.5cm,left=2.5cm,right=2.5cm}
+
+% Colors
+\definecolor{waterblue}{RGB}{0,150,200}
+\definecolor{fireorange}{RGB}{255,100,0}
+\definecolor{headerblue}{RGB}{41,128,185}
+\definecolor{lightgray}{RGB}{240,240,240}
+
+% Headers and footers
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textit{Game Concept Document}}
+\fancyhead[R]{\textit{ONE DROP}}
+\fancyfoot[C]{\thepage}
+
+% Hyperref setup
+\hypersetup{
+    colorlinks=true,
+    linkcolor=headerblue,
+    filecolor=magenta,
+    urlcolor=cyan,
+    pdftitle={GCD - ONE DROP},
+    pdfauthor={Abdelghafour Moumad}
+}
+
+% Title formatting
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{headerblue}}{\thesection}{1em}{}
+\titleformat{\subsection}
+  {\normalfont\large\bfseries}{\thesubsection}{1em}{}
+
+\begin{document}
+
+% ==================== PAGE DE GARDE ====================
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
+
+    {\Huge\bfseries\color{waterblue} GAME CONCEPT DOCUMENT\par}
+    \vspace{1cm}
+    {\LARGE\color{fireorange} ONE DROP\par}
+    \vspace{1.2cm}
+
+    \includegraphics[width=0.42\textwidth]{../Assets/Screenshots/Character_NoBackground_Transparent.png}
+
+    \vspace{1.4cm}
+    {\Large\textbf{Auteurs}\par}
+    \vspace{0.5cm}
+    {\large Abdelghafour Moumad -- Game Programmer\par}
+    {\large Ahmed Zine -- Game Artist\par}
+    {\large Mohamed Chadi Gmira -- Game Designer\par}
+
+    \vfill
+
+    {\large VGC 2026\par}
+\end{titlepage}
+
+% ==================== TABLEAU DES VERSIONS ====================
+\section*{Tableau des versions}
+\addcontentsline{toc}{section}{Tableau des versions}
+
+\begin{table}[h]
+\centering
+\begin{tabularx}{\textwidth}{|l|l|X|X|}
+\hline
+\textbf{N\textdegree Version} & \textbf{Date} & \textbf{Auteur(s)} & \textbf{Description} \\ \hline
+1.0 & 15/02/2026 & Abdelghafour Moumad & Version initiale \\ \hline
+1.1 & 15/02/2026 & Abdelghafour Moumad & GCD adapté au prototype Unity actuel \\ \hline
+\end{tabularx}
+\end{table}
+
+\newpage
+
+% ==================== TABLE DES MATIÈRES ====================
+\tableofcontents
+\newpage
+
+% ==================== RÉSUMÉ SYNTHÉTIQUE ====================
+\section{Résumé synthétique du projet}
+
+\begin{table}[h]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+\textbf{Genre} & Plateformer 2D de précision orienté mouvement \\ \hline
+\textbf{Univers} & Monde volcanique où une goutte d'eau traverse des zones hostiles pour survivre \\ \hline
+\textbf{Références} & Celeste (précision), Ori (fluidité visuelle), Hollow Knight (ambiance) \\ \hline
+\textbf{Cible marketing} & 13+ ; joueurs appréciant les jeux de plateforme exigeants \\ \hline
+\textbf{Plateforme(s)} & PC (Windows 10/11) \\ \hline
+\textbf{Nombre de joueurs} & Solo \\ \hline
+\textbf{Modes de jeu} & Progression par niveaux (solo) \\ \hline
+\textbf{Point de vue caméra} & 2D side-scrolling avec caméra orthographique follow \\ \hline
+\end{tabularx}
+\end{table}
+
+\subsection{USP (Unique Selling Point)}
+
+\begin{tcolorbox}[colback=waterblue!10,colframe=waterblue!80!black,title=USP]
+Le coeur du jeu combine :
+\begin{itemize}[noitemsep]
+    \item Contrôles réactifs (jump, wall climb, wall jump, slide dash)
+    \item Tir d'eau normal/chargé intégré au déplacement
+    \item Avatar ``goutte'' avec déformation visuelle organique en temps réel
+    \item Contraste visuel fort eau vs lave pour lisibilité immédiate
+\end{itemize}
+\end{tcolorbox}
+
+\subsection{Gameplay principal}
+
+Plateforming de précision centré sur la mobilité. Le joueur doit enchaîner déplacement, escalade, wall jump et tir d'eau pour franchir des sections verticales et horizontales dans un environnement lave/feu.
+
+\subsection{Fonctionnalités clés (prototype actuel)}
+
+\begin{itemize}[noitemsep]
+    \item Mouvement horizontal avec accélération
+    \item Jump, wall climb, wall jump
+    \item Slide dash par double tap gauche/droite
+    \item Tir d'eau (normal et chargé)
+    \item Caméra follow lissée avec limites
+    \item Effets visuels dynamiques de lave et background réactif
+\end{itemize}
+
+\subsection{Direction artistique}
+
+\textbf{Graphique :} 2D stylisé avec contraste chaud/froid (lave orange, eau cyan), avatar liquide expressif.
+
+\textbf{Sonore :} Ambiances volcaniques et effets d'impact eau/feu (cible de production).
+
+\subsection{Brique technique principale}
+
+Contrôleur 2D central (\texttt{OneDropController2D}) + détections physiques \texttt{BoxCast}.
+
+% ==================== PITCH ====================
+\section{Pitch}
+
+\begin{tcolorbox}[colback=fireorange!10,colframe=fireorange!80!black,enhanced,center title,fonttitle=\bfseries,title=Elevator Pitch]
+\centering
+\textit{You are the last drop of water in a world ruled by fire.}
+
+\vspace{0.2cm}
+Traverse dangerous volcanic spaces with precise movement and wall-tech.
+
+\vspace{0.2cm}
+\textbf{Reach the next safe point before the environment overwhelms you.}
+\end{tcolorbox}
+
+% ==================== USP & KSP ====================
+\section{USP \& KSP}
+
+\subsection{USP (Unique Selling Point)}
+
+ONE DROP propose un \textbf{platformer de précision à identité liquide} : le tir, la mobilité avancée et la déformation visuelle travaillent ensemble pour créer une sensation de contrôle unique.
+
+\subsection{KSP (Key Selling Points)}
+
+\begin{enumerate}
+    \item \textbf{Precision platforming} : contrôles rapides et lisibles
+    \item \textbf{Mobility kit complet} : jump, wall climb, wall jump, slide dash
+    \item \textbf{Flow movement} : fluidité de déplacement centrée sur saut, wall climb et wall jump
+    \item \textbf{Soft-body feel} : feedback visuel organique de la goutte
+    \item \textbf{Univers feu vs eau} : direction artistique immédiatement identifiable
+\end{enumerate}
+
+% ==================== RÉFÉRENCES ====================
+\section{Références}
+
+\subsection{Celeste}
+\textbf{Influence :} lisibilité des inputs, exigence technique, boucle d'apprentissage par répétition.
+
+\subsection{Ori and the Blind Forest}
+\textbf{Influence :} fluidité perçue, feedback visuel de mouvement, sensation organique.
+
+\subsection{Hollow Knight}
+\textbf{Influence :} ambiance hostile et progression par zones interconnectées.
+
+% ==================== 3C ====================
+\section{3C (Character, Camera, Controls)}
+
+\subsection{Character}
+
+\textbf{Description :} Une goutte d'eau consciente qui progresse dans un biome volcanique.
+
+\textbf{Capacités :}
+\begin{itemize}[noitemsep]
+    \item \textbf{Move} -- Déplacement horizontal précis
+    \item \textbf{Jump} -- Saut principal
+    \item \textbf{Wall Climb} -- Escalade murale
+    \item \textbf{Wall Jump} -- Détachement avec impulsion
+    \item \textbf{Slide Dash} -- Dash court via double tap
+    \item \textbf{Shoot} -- Tir d'eau normal/chargé
+\end{itemize}
+
+\textbf{Objectif :} Traverser les obstacles du niveau et atteindre la zone de sortie/refill.
+
+\subsection{Camera}
+
+\textbf{Type :} caméra orthographique 2D side-scrolling.
+
+\textbf{Comportement actuel :}
+\begin{itemize}[noitemsep]
+    \item Smooth follow sur la position du joueur
+    \item Offset vertical pour meilleure anticipation
+    \item Clamp optionnel des limites X/Y selon la zone
+\end{itemize}
+
+\textbf{Implémentation :} script custom \texttt{CameraFollow2D}.
+
+\subsection{Controls}
+
+\begin{table}[h]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+\textbf{Action} & \textbf{Input (PC)} \\ \hline
+Move Left / Right & A / D ou flèches gauche / droite \\ \hline
+Jump & Space \\ \hline
+Climb & Maintenir vers le mur + input vertical \\ \hline
+Shoot Water & J ou clic gauche (maintenir puis relâcher pour charge) \\ \hline
+Slide Dash & Double tap A/D (ou flèches) \\ \hline
+\end{tabularx}
+\caption{Schéma de contrôles clavier/souris}
+\end{table}
+
+% ==================== CONDITIONS WIN/FAIL ====================
+\section{Conditions Win / Fail}
+
+\subsection{Condition de victoire (Win)}
+\begin{tcolorbox}[colback=green!10,colframe=green!70!black,title=Win Condition]
+Atteindre la zone de fin (ou point de refill/checkpoint) du segment de niveau.
+\end{tcolorbox}
+
+\subsection{Condition d'échec (Fail)}
+\begin{tcolorbox}[colback=red!10,colframe=red!70!black,title=Fail Condition]
+Échec de traversal (chute hors zone, dégâts environnementaux critiques) menant à un respawn checkpoint.
+\end{tcolorbox}
+
+\textbf{Causes d'échec typiques :}
+\begin{itemize}[noitemsep]
+    \item Contact avec zones de feu/lave
+    \item Mauvais timing de saut/escalade
+    \item Mauvais usage du tir dans une section contrainte
+\end{itemize}
+
+% ==================== OBSTACLES ====================
+\section{Obstacles (Gameplay Bricks)}
+
+\begin{table}[h]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+\textbf{Obstacle} & \textbf{Description \& Gameplay} \\ \hline
+Lava Zones & Zones dangereuses imposant du mouvement propre et rapide \\ \hline
+Vertical Walls & Sections d'escalade murale avec wall jump \\ \hline
+Narrow Platforms & Plateformes étroites demandant précision de déplacement \\ \hline
+Long Gaps & Gaps demandant combinaison jump + momentum \\ \hline
+Pressure Sections & Enchaînements rapides avec peu de marge d'erreur \\ \hline
+Traversal Interactions & Situations de mobilité pour dégager/activer un passage (selon niveau) \\ \hline
+\end{tabularx}
+\caption{Briques d'obstacles prévues et utilisées}
+\end{table}
+
+% ==================== BOUCLES OCR ====================
+\section{Boucles OCR (Objectif -- Challenge -- Récompense)}
+
+\subsection{Micro Loop (seconde par seconde)}
+\begin{tcolorbox}[colback=lightgray,colframe=black]
+\textbf{Objectif :} franchir une cellule d'obstacle\newline
+\textbf{Challenge :} timing de mouvement + positionnement\newline
+\textbf{Récompense :} progression immédiate et feedback de maîtrise
+\end{tcolorbox}
+
+\subsection{Mid Loop (minute par minute)}
+\begin{tcolorbox}[colback=lightgray,colframe=black]
+\textbf{Objectif :} terminer une section complète\newline
+\textbf{Challenge :} exécuter une suite d'actions sans erreur majeure\newline
+\textbf{Récompense :} checkpoint, sécurité, avancée de niveau
+\end{tcolorbox}
+
+\subsection{Macro Loop (session de jeu)}
+\begin{tcolorbox}[colback=lightgray,colframe=black]
+\textbf{Objectif :} compléter le niveau / l'arc de progression\newline
+\textbf{Challenge :} maîtriser l'ensemble des mécaniques 3C\newline
+\textbf{Récompense :} sentiment d'accomplissement + accès à la zone suivante
+\end{tcolorbox}
+
+% ==================== UNIVERS & HISTOIRE ====================
+\section{Univers \& Histoire}
+
+\subsection{Contexte}
+Le monde est dominé par la chaleur et les zones volcaniques. L'eau est rare et symbolise l'équilibre perdu.
+
+\subsection{Protagoniste}
+Le joueur incarne une goutte d'eau vivante cherchant à traverser ce monde hostile.
+
+\subsection{Quête}
+Progresser de zone en zone vers des points de sécurité et de restauration de l'eau.
+
+\subsection{Narration environnementale}
+\begin{itemize}[noitemsep]
+    \item Ruines brûlées et plateformes fracturées
+    \item Contraste chromatique chaud/froid pour guider le joueur
+    \item Mise en scène sans surcharger l'écran de texte
+\end{itemize}
+
+% ==================== DIRECTION ARTISTIQUE GRAPHIQUE ====================
+\section{Direction artistique graphique}
+
+\subsection{Style visuel}
+\begin{itemize}[noitemsep]
+    \item Esthétique 2D stylisée avec FX de lave
+    \item Personnage liquide avec déformation visuelle
+    \item Décors volcaniques lisibles orientés gameplay
+\end{itemize}
+
+\subsection{Palette de couleurs}
+\begin{tcolorbox}[colback=fireorange!20,colframe=fireorange,title=Dominance Feu]
+Orange / rouge / ambre : chaleur, danger, pression.
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=waterblue!20,colframe=waterblue,title=Présence Eau]
+Bleu / cyan : joueur, lisibilité, respiration visuelle.
+\end{tcolorbox}
+
+\subsection{Post-processing (direction cible)}
+\begin{itemize}[noitemsep]
+    \item Bloom léger sur éléments chauds
+    \item Ajustement colorimétrique pour contraste feu/eau
+    \item Distorsion thermique localisée près de la lave
+\end{itemize}
+
+% ==================== DIRECTION ARTISTIQUE SONORE ====================
+\section{Direction artistique sonore}
+
+\subsection{Musique}
+Ambiance minimale, tension progressive, respirations en zones sûres.
+
+\subsection{SFX (cibles)}
+\begin{table}[h]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+\textbf{Type} & \textbf{Description} \\ \hline
+Movement Water & Sons de déplacement, saut, réception \\ \hline
+Movement Feedback & Déplacement, saut, réception, impulsions visuelles \\ \hline
+Lava Ambience & Boucles de lave et chaleur \\ \hline
+UI Feedback & Validation/retry/checkpoint \\ \hline
+\end{tabularx}
+\end{table}
+
+% ==================== MENUS & HUD ====================
+\section{Menus \& HUD}
+
+\subsection{HUD}
+\begin{itemize}[noitemsep]
+    \item HUD minimal centré sur la lisibilité gameplay
+    \item Indicateur de charge du tir (prévu)
+    \item Feedback de danger environnemental (prévu)
+\end{itemize}
+
+\subsection{Menus}
+\begin{itemize}[noitemsep]
+    \item Main Menu : Play / Options / Quit
+    \item Pause Menu : Resume / Restart / Options / Quit
+    \item Game Over/Retry : reprise rapide de la section
+\end{itemize}
+
+% ==================== LEVEL DESIGN ====================
+\section{Level Design}
+
+\subsection{Overview global (intentions)}
+Le level design de ONE DROP vise une progression basée sur la maîtrise des 3C. Chaque niveau introduit une mécanique, la combine avec celles déjà acquises, puis valide l'apprentissage dans une section de tension.
+
+\subsection{Structure globale des niveaux}
+\begin{enumerate}[noitemsep]
+    \item \textbf{Entrée / onboarding} : zone sûre, lecture immédiate du layout
+    \item \textbf{Apprentissage} : nouvelle brique gameplay isolée
+    \item \textbf{Combinaison} : enchaînement de 2 à 3 briques
+    \item \textbf{Pic de difficulté} : exécution sous pression
+    \item \textbf{Résolution} : checkpoint/refill et respiration
+\end{enumerate}
+
+\subsection{Fiche Niveau 1 -- ``Coulée initiale''}
+\textbf{Thématique :} découverte du biome lave et prise en main du mouvement.
+
+\textbf{Ce qu'on raconte :} la goutte comprend que le monde est hostile mais qu'il existe des chemins sûrs.
+
+\textbf{Briques utilisées :}
+\begin{itemize}[noitemsep]
+    \item Plateformes fixes
+    \item Petits gaps
+    \item Premières zones de lave au sol
+    \item Zone de refill finale
+\end{itemize}
+
+\textbf{Situations agencées :}
+\begin{enumerate}[noitemsep]
+    \item Saut simple au-dessus d'une mini lave
+    \item Double saut spatial (deux plateformes proches)
+    \item Couloir horizontal avec timing de déplacement
+    \item Fin de niveau sur plateforme sûre + refill
+\end{enumerate}
+
+\subsection{Fiche Niveau 2 -- ``Parois brûlantes''}
+\textbf{Thématique :} verticalité et mobilité avancée.
+
+\textbf{Ce qu'on raconte :} la progression devient plus risquée ; survivre impose d'utiliser les murs.
+
+\textbf{Briques utilisées :}
+\begin{itemize}[noitemsep]
+    \item Wall climb shafts
+    \item Wall jump transitions
+    \item Plateformes étroites
+    \item Couloirs de pression
+\end{itemize}
+
+\textbf{Situations agencées :}
+\begin{enumerate}[noitemsep]
+    \item Puits vertical d'escalade (safe)
+    \item Séquence climb + wall jump entre deux murs
+    \item Atterrissage précis sur ledge étroite
+    \item Sortie via enchaînement vertical court
+\end{enumerate}
+
+\subsection{Fiche Niveau 3 -- ``Pression magmatique''}
+\textbf{Thématique :} rythme élevé, exécution et tir d'eau.
+
+\textbf{Ce qu'on raconte :} la goutte n'est plus en survie passive ; elle agit et force le passage.
+
+\textbf{Briques utilisées :}
+\begin{itemize}[noitemsep]
+    \item Slide dash sections
+    \item Long gaps avec momentum
+    \item Interactions de traversal (ouverture/neutralisation simple)
+    \item Safe ledges rares
+\end{itemize}
+
+\textbf{Situations agencées :}
+\begin{enumerate}[noitemsep]
+    \item Dash sous plafond bas avec lave dessous
+    \item Tir d'eau pour sécuriser le passage suivant
+    \item Saut long + wall jump de récupération
+    \item Sprint final vers checkpoint/refill
+\end{enumerate}
+
+\subsection{Schéma type (macro-layout)}
+\begin{center}
+\begin{tikzpicture}[scale=0.8]
+    % fond
+    \fill[fireorange!20] (0,0) rectangle (14,6.5);
+    % plateformes
+    \fill[black] (0,0) rectangle (2.8,0.3);
+    \fill[black] (3.8,1.1) rectangle (5.8,1.4);
+    \fill[black] (6.6,2.4) rectangle (8.4,2.7);
+    \fill[black] (9.2,3.7) rectangle (11.0,4.0);
+    \fill[black] (11.8,5.0) rectangle (13.8,5.3);
+    % lave
+    \fill[fireorange] (0,-0.5) rectangle (14,0);
+    % murs verticaux
+    \fill[black] (5.9,1.0) rectangle (6.1,3.2);
+    \fill[black] (8.9,2.0) rectangle (9.1,4.4);
+    % start / goal
+    \fill[waterblue] (0.8,0.55) circle (0.18);
+    \fill[waterblue] (13.1,5.6) circle (0.26);
+    % labels
+    \node at (0.9,0.9) {\small Start};
+    \node at (13.1,6.0) {\small Refill};
+    \node at (6.7,3.5) {\tiny Climb};
+    \node at (10.1,4.5) {\tiny Wall jump};
+\end{tikzpicture}
+\end{center}
+
+\subsection{Liste consolidée des briques gameplay (production)}
+\begin{multicols}{2}
+\begin{itemize}[noitemsep]
+    \item Fixed platforms
+    \item Narrow ledges
+    \item Long momentum gaps
+    \item Lava pools
+    \item Vertical climb shafts
+    \item Wall jump corridors
+    \item Slide dash corridors
+    \item Traversal interaction points
+    \item Safe zones / refill
+    \item Checkpoints
+\end{itemize}
+\end{multicols}
+
+% ==================== CONCLUSION ====================
+\section*{Conclusion}
+\addcontentsline{toc}{section}{Conclusion}
+
+\textbf{ONE DROP} est un platformer 2D de précision avec une identité forte eau vs feu.
+Le concept s'appuie sur des mécaniques déjà prototypées (mouvement avancé, tir chargé, caméra follow, FX de lave) et vise une progression exigeante mais lisible.
+
+\begin{itemize}[noitemsep]
+    \item Priorité 1 : qualité de contrôle et lisibilité
+    \item Priorité 2 : design de niveaux orienté maîtrise
+    \item Priorité 3 : polish visuel/sonore au service du gameplay
+\end{itemize}
+
+\end{document}

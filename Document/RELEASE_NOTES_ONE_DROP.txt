@@ -1,0 +1,23 @@
+﻿ONE DROP - Version 0.1 Release Notes
+
+- Implementation of core gameplay mechanics (horizontal movement, jump, wall climb, wall jump).
+- Implementation of Slide Dash (double tap left/right).
+- First pass of lava-themed environment visuals.
+- Integration of placeholder visuals for gameplay readability.
+
+ONE DROP - Version 0.2 Release Notes
+
+- Implementation of 3C improvements (Character, Camera, Controls).
+- Camera update: static camera replaced by smooth follow camera with optional limits.
+- Character feedback update: stronger soft-body style squash/stretch reactions in movement states.
+- Controls update: keyboard + mouse + gamepad support improvements.
+- Gameplay polish: anti-edge-stick collision handling and movement stability fixes.
+- Gameplay readability update: improved visual contrast between safe paths and dangerous lava areas.
+- Initial production setup for HUD/Menu pipeline (foundation stage).
+
+ONE DROP - Version 0.3 (Gameplay Fix Pass - 2026-02-15)
+
+- Movement tuning fix: added Rigidbody damping override and speed-aware acceleration so `moveSpeed` changes are immediately noticeable.
+- Jump stability fix: ground detection now validates floor normals and uses a dedicated foot probe to prevent false grounded states on platform edges/undersides.
+- Wall-jump spam fix: climb detach jump now triggers once per away-input transition and respects jump interval cooldown.
+- Eyes tracking fix: googly eyes now follow Rigidbody movement/velocity for OneDropController2D, so eyes react when moving and jumping left/right.

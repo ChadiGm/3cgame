@@ -13,26 +13,30 @@ namespace WaterBlob
         [Header("References")]
         [SerializeField] private Transform visualRoot;
 
+        [Header("Shooting")]
+        [SerializeField] private Transform firePoint;
+        [SerializeField] private GameObject bulletPrefab;
+        [SerializeField] private GameObject gunSprite;
+        [SerializeField] private float bulletSpeed = 20f;
+
         [Header("Movement")]
         [SerializeField, Min(0f)] private float moveSpeed = 7f;
         [SerializeField, Min(0f)] private float acceleration = 55f;
+        [SerializeField, Min(0f)] private float minAccelerationFromSpeed = 4f;
         [SerializeField, Min(0f)] private float jumpForce = 12f;
         [SerializeField, Min(0f)] private float postJumpGroundIgnoreTime = 0.08f;
-        [SerializeField, Min(0f)] private float minJumpInterval = 0.22f; // FIX: increased from 0.08 to prevent jump spamming
+        [SerializeField, Min(0f)] private float minJumpInterval = 0.22f;
+
+        [Header("Physics Tuning")]
+        [SerializeField] private bool overrideRigidbodyDamping = true;
+        [SerializeField, Min(0f)] private float linearDamping = 0f;
+        [SerializeField, Min(0f)] private float angularDamping = 0.05f;
 
         [Header("Slide Dash")]
         [SerializeField, Min(0f)] private float doubleTapWindow = 0.25f;
         [SerializeField, Min(0f)] private float slideSpeed = 14f;
         [SerializeField, Min(0f)] private float slideDuration = 0.18f;
         [SerializeField, Min(0f)] private float slideCooldown = 0.25f;
-
-        [Header("Water Shot")]
-        [SerializeField] private Transform mouthPoint;
-        [SerializeField] private GameObject waterProjectilePrefab;
-        [SerializeField, Min(0f)] private float shotSpeed = 12f;
-        [SerializeField, Min(0f)] private float chargedShotSpeed = 17f;
-        [SerializeField, Min(0f)] private float chargedHoldTime = 0.45f;
-        [SerializeField, Min(0f)] private float shotCooldown = 0.08f;
 
         [Header("Climbing")]
         [SerializeField, Min(0f)] private float climbSpeed = 4.8f;
@@ -45,6 +49,7 @@ namespace WaterBlob
         [SerializeField] private LayerMask wallMask;
         [SerializeField, Min(0.01f)] private float groundCheckDistance = 0.12f;
         [SerializeField, Min(0.01f)] private float wallCheckDistance = 0.12f;
+        [SerializeField, Range(0.05f, 0.5f)] private float groundProbeHeightFactor = 0.22f;
         [SerializeField, Range(0.5f, 1f)] private float castWidthFactor = 0.95f;
         [SerializeField, Range(0.5f, 1f)] private float castHeightFactor = 0.95f;
 
@@ -82,9 +87,7 @@ namespace WaterBlob
         private float inputX;
         private float inputY;
         private bool jumpPressed;
-        private bool firePressedThisFrame;
-        private bool fireReleasedThisFrame;
-        private bool fireHeld;
+        private bool shootPressed;
         private bool isClimbing;
         private bool isSliding;
         private int climbWallDirection;
@@ -95,8 +98,6 @@ namespace WaterBlob
         private float previousVelY;
         private Vector2 previousVelocity;
         private float accelerationSignal;
-        private float fireHoldTimer;
-        private float shotCooldownTimer;
         private float slideTimer;
         private float slideCooldownTimer;
         private float postJumpGroundIgnoreTimer;
@@ -114,6 +115,7 @@ namespace WaterBlob
         private bool touchingWallThisStep;
         private int touchingWallDirection;
         private Vector2 currentGroundNormal = Vector2.up;
+        private bool wasPressingAwayFromWall;
 
         private void Awake()
         {
@@ -122,10 +124,6 @@ namespace WaterBlob
             if (visualRoot == null)
             {
                 visualRoot = transform;
-            }
-            if (mouthPoint == null)
-            {
-                mouthPoint = transform;
             }
 
             facingSign = transform.localScale.x >= 0f ? 1f : -1f;
@@ -137,6 +135,12 @@ namespace WaterBlob
         private void Start()
         {
             rb.gravityScale = gravityWhenNotClimbing;
+            if (overrideRigidbodyDamping)
+            {
+                rb.linearDamping = linearDamping;
+                rb.angularDamping = angularDamping;
+            }
+
             CreateAndApplyZeroFrictionMaterial();
             previousVelocity = rb.linearVelocity;
         }
@@ -144,28 +148,30 @@ namespace WaterBlob
         private void Update()
         {
             ReadInput();
+            
+            // Handle shooting
+            if (shootPressed)
+            {
+                ShootHorizontal();
+                shootPressed = false;
+            }
         }
 
         private void FixedUpdate()
         {
             float dt = Time.fixedDeltaTime;
-            shotCooldownTimer = Mathf.Max(0f, shotCooldownTimer - dt);
             slideCooldownTimer = Mathf.Max(0f, slideCooldownTimer - dt);
             slideTimer = Mathf.Max(0f, slideTimer - dt);
             postJumpGroundIgnoreTimer = Mathf.Max(0f, postJumpGroundIgnoreTimer - dt);
             jumpIntervalTimer = Mathf.Max(0f, jumpIntervalTimer - dt);
 
             RaycastHit2D groundHit = default;
-            grounded = postJumpGroundIgnoreTimer <= 0f && CheckGround(out groundHit);
+            bool hasGroundHit = CheckGround(out groundHit);
+            grounded = postJumpGroundIgnoreTimer <= 0f && hasGroundHit && IsGroundHitValid(groundHit);
             bool touchingWall = CheckWall(out _, out int wallDirection);
             touchingWallThisStep = touchingWall;
             touchingWallDirection = wallDirection;
             currentGroundNormal = groundHit.collider != null ? groundHit.normal : Vector2.up;
-
-            if (fireReleasedThisFrame)
-            {
-                TryShootWater();
-            }
 
             if (isSliding && slideTimer <= 0f)
             {
@@ -177,8 +183,10 @@ namespace WaterBlob
             if (isClimbing)
             {
                 ApplyClimbMovement();
-                bool oppositeInputJump = Mathf.Abs(inputX) > 0.1f && Mathf.Sign(inputX) == -climbWallDirection;
-                if (jumpPressed || oppositeInputJump)
+                bool pressingAwayFromWall = Mathf.Abs(inputX) > 0.1f && Mathf.Sign(inputX) == -climbWallDirection;
+                bool oppositeInputJump = pressingAwayFromWall && !wasPressingAwayFromWall;
+                wasPressingAwayFromWall = pressingAwayFromWall;
+                if ((jumpPressed || oppositeInputJump) && jumpIntervalTimer <= 0f)
                 {
                     DoWallJump();
                 }
@@ -200,7 +208,6 @@ namespace WaterBlob
                 }
             }
 
-            // FIX: Only cancel horizontal velocity for edge stick when NOT actively providing input
             if (cancelHorizontalForEdgeStick && !grounded && !isClimbing)
             {
                 if (Mathf.Abs(inputX) < 0.1f)
@@ -217,8 +224,6 @@ namespace WaterBlob
             ApplySoftBodyDeformation();
 
             jumpPressed = false;
-            firePressedThisFrame = false;
-            fireReleasedThisFrame = false;
             groundedLastStep = grounded;
             previousVelY = rb.linearVelocity.y;
             previousVelocity = rb.linearVelocity;
@@ -231,7 +236,6 @@ namespace WaterBlob
                 return;
             }
 
-            // FIX: Don't trigger edge-stick cancellation if the player is actively moving
             if (Mathf.Abs(inputX) > 0.1f)
             {
                 return;
@@ -253,11 +257,9 @@ namespace WaterBlob
             float x = 0f;
             float y = 0f;
             bool jumpDown = false;
-            bool shotDown = false;
-            bool shotUp = false;
-            bool shotIsHeld = false;
             bool leftTapDown = false;
             bool rightTapDown = false;
+            bool shootDown = false;
 
 #if ENABLE_INPUT_SYSTEM
             Keyboard keyboard = Keyboard.current;
@@ -270,11 +272,9 @@ namespace WaterBlob
                 if (keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed) y += 1f;
                 if (keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed) y -= 1f;
                 jumpDown |= keyboard.spaceKey.wasPressedThisFrame;
-                shotDown |= keyboard.jKey.wasPressedThisFrame;
-                shotUp |= keyboard.jKey.wasReleasedThisFrame;
-                shotIsHeld |= keyboard.jKey.isPressed;
                 leftTapDown |= keyboard.aKey.wasPressedThisFrame || keyboard.leftArrowKey.wasPressedThisFrame;
                 rightTapDown |= keyboard.dKey.wasPressedThisFrame || keyboard.rightArrowKey.wasPressedThisFrame;
+                shootDown |= keyboard.jKey.wasPressedThisFrame;
             }
 
             Gamepad gamepad = Gamepad.current;
@@ -284,19 +284,14 @@ namespace WaterBlob
                 if (Mathf.Abs(stick.x) > Mathf.Abs(x)) x = stick.x;
                 if (Mathf.Abs(stick.y) > Mathf.Abs(y)) y = stick.y;
                 jumpDown |= gamepad.buttonSouth.wasPressedThisFrame;
-                shotDown |= gamepad.rightTrigger.wasPressedThisFrame;
-                shotUp |= gamepad.rightTrigger.wasReleasedThisFrame;
-                shotIsHeld |= gamepad.rightTrigger.isPressed;
             }
 #else
             x = Input.GetAxisRaw("Horizontal");
             y = Input.GetAxisRaw("Vertical");
             jumpDown = Input.GetButtonDown("Jump");
-            shotDown = Input.GetKeyDown(KeyCode.J);
-            shotUp = Input.GetKeyUp(KeyCode.J);
-            shotIsHeld = Input.GetKey(KeyCode.J);
             leftTapDown = Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow);
             rightTapDown = Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow);
+            shootDown = Input.GetKeyDown(KeyCode.J);
 #endif
 
             inputX = Mathf.Clamp(x, -1f, 1f);
@@ -305,23 +300,43 @@ namespace WaterBlob
             {
                 jumpPressed = true;
             }
-
-            firePressedThisFrame = shotDown;
-            fireReleasedThisFrame = shotUp;
-            fireHeld = shotIsHeld;
-
-            if (firePressedThisFrame)
+            if (shootDown)
             {
-                fireHoldTimer = 0f;
-            }
-            else if (fireHeld)
-            {
-                fireHoldTimer += Time.unscaledDeltaTime;
+                shootPressed = true;
             }
 
             ProcessDoubleTapSlide(leftTapDown, rightTapDown);
         }
 
+        private void ShootHorizontal()
+        {
+            if (bulletPrefab == null || firePoint == null)
+            {
+                return;
+            }
+
+            // Rotate gun to horizontal (0 degrees)
+            if (gunSprite != null)
+            {
+                gunSprite.transform.rotation = Quaternion.Euler(0, 0, 0);
+            }
+
+            // Shoot in the direction the player is facing (LEFT or RIGHT only)
+            Vector2 shootDirection = facingSign >= 0f ? Vector2.right : Vector2.left;
+
+            // Instantiate bullet with NO rotation (horizontal)
+            GameObject bullet = Instantiate(bulletPrefab, firePoint.position, Quaternion.identity);
+            Rigidbody2D bulletRb = bullet.GetComponent<Rigidbody2D>();
+
+            if (bulletRb != null)
+            {
+                // Set velocity to HORIZONTAL only (x direction)
+                bulletRb.linearVelocity = shootDirection * bulletSpeed;
+
+                // Force gravity off on bullet if needed
+                bulletRb.gravityScale = 0f;
+            }
+        }
         private void UpdateClimbState(bool touchingWall, int wallDirection)
         {
             bool movingTowardWall = touchingWall && Mathf.Abs(inputX) > 0.1f && Mathf.Sign(inputX) == wallDirection;
@@ -335,6 +350,7 @@ namespace WaterBlob
                     isClimbing = true;
                     isSliding = false;
                     climbWallDirection = wallDirection == 0 ? (int)Mathf.Sign(facingSign) : wallDirection;
+                    wasPressingAwayFromWall = false;
                     rb.gravityScale = 0f;
                     rb.linearVelocity = Vector2.zero;
                 }
@@ -396,7 +412,8 @@ namespace WaterBlob
         {
             rb.gravityScale = gravityWhenNotClimbing;
             float targetX = inputX * moveSpeed;
-            float nextX = Mathf.MoveTowards(rb.linearVelocity.x, targetX, acceleration * Time.fixedDeltaTime);
+            float effectiveAcceleration = Mathf.Max(acceleration, moveSpeed * minAccelerationFromSpeed);
+            float nextX = Mathf.MoveTowards(rb.linearVelocity.x, targetX, effectiveAcceleration * Time.fixedDeltaTime);
             rb.linearVelocity = new Vector2(nextX, rb.linearVelocity.y);
 
             if (Mathf.Abs(inputX) > 0.01f)
@@ -435,7 +452,6 @@ namespace WaterBlob
             jumpIntervalTimer = minJumpInterval;
             postJumpGroundIgnoreTimer = postJumpGroundIgnoreTime;
 
-            // FIX: Always reset Y velocity to 0 before jumping to prevent stacking impulses
             Vector2 v = rb.linearVelocity;
             v.y = 0f;
             rb.linearVelocity = v;
@@ -449,8 +465,9 @@ namespace WaterBlob
             StopClimbing();
             wallDetachPulse = 1f;
             wallDetachDirection = away;
+            jumpIntervalTimer = minJumpInterval;
+            postJumpGroundIgnoreTimer = postJumpGroundIgnoreTime;
 
-            // FIX: Always reset Y velocity before wall jump
             Vector2 v = rb.linearVelocity;
             v.y = 0f;
             rb.linearVelocity = v;
@@ -463,65 +480,8 @@ namespace WaterBlob
         {
             isClimbing = false;
             climbWallDirection = 0;
+            wasPressingAwayFromWall = false;
             rb.gravityScale = gravityWhenNotClimbing;
-        }
-
-        private void TryShootWater()
-        {
-            if (shotCooldownTimer > 0f)
-            {
-                return;
-            }
-
-            bool charged = fireHoldTimer >= chargedHoldTime;
-            float speed = charged ? chargedShotSpeed : shotSpeed;
-            float scale = charged ? 1.7f : 1f;
-            SpawnWaterProjectile(speed, scale, charged);
-            shotCooldownTimer = shotCooldown;
-            fireHoldTimer = 0f;
-        }
-
-        private void SpawnWaterProjectile(float speed, float scale, bool charged)
-        {
-            Vector2 dir = facingSign >= 0f ? Vector2.right : Vector2.left;
-            Vector3 spawnPos = mouthPoint != null ? mouthPoint.position : transform.position;
-            spawnPos += (Vector3)(dir * 0.2f);
-
-            GameObject projectile;
-            if (waterProjectilePrefab != null)
-            {
-                projectile = Instantiate(waterProjectilePrefab, spawnPos, Quaternion.identity);
-            }
-            else
-            {
-                projectile = new GameObject(charged ? "ChargedWaterDrop" : "WaterDrop");
-                projectile.transform.position = spawnPos;
-                CircleCollider2D circle = projectile.AddComponent<CircleCollider2D>();
-                circle.isTrigger = true;
-                Rigidbody2D body = projectile.AddComponent<Rigidbody2D>();
-                body.gravityScale = 0.08f;
-                body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
-                WaterDropProjectile2D autoProjectile = projectile.AddComponent<WaterDropProjectile2D>();
-                autoProjectile.lifeTime = charged ? 2.2f : 1.5f;
-            }
-
-            projectile.transform.localScale = Vector3.one * scale;
-            Rigidbody2D projectileBody = projectile.GetComponent<Rigidbody2D>();
-            if (projectileBody == null)
-            {
-                projectileBody = projectile.AddComponent<Rigidbody2D>();
-            }
-
-            projectileBody.gravityScale = charged ? 0.04f : 0.08f;
-            projectileBody.linearVelocity = dir * speed;
-
-            WaterDropProjectile2D projectileLogic = projectile.GetComponent<WaterDropProjectile2D>();
-            if (projectileLogic == null)
-            {
-                projectileLogic = projectile.AddComponent<WaterDropProjectile2D>();
-            }
-
-            projectileLogic.Initialize(dir, speed, charged);
         }
 
         private void ApplyRotation(RaycastHit2D groundHit)
@@ -579,7 +539,6 @@ namespace WaterBlob
             float slope01 = grounded && !isClimbing ? Mathf.Clamp01(Mathf.Abs(Vector2.SignedAngle(Vector2.up, currentGroundNormal)) / Mathf.Max(1f, maxGroundAngle)) : 0f;
             float wall01 = (isClimbing || touchingWallThisStep) ? 1f : 0f;
             float idle01 = grounded && Mathf.Abs(velocity.x) < 0.08f && !isClimbing ? 1f : 0f;
-            float charge01 = fireHeld ? Mathf.Clamp01(fireHoldTimer / Mathf.Max(0.01f, chargedHoldTime)) : 0f;
 
             float horizontalSpread = 0f;
             float verticalCompress = 0f;
@@ -619,8 +578,6 @@ namespace WaterBlob
 
             horizontalSpread += wallDetachStretch * wallDetachPulse;
             verticalStretch += wallDetachStretch * wallDetachPulse * 0.32f;
-            verticalStretch += charge01 * 0.08f;
-            verticalCompress += charge01 * 0.04f;
 
             float targetXAbs = baseVisualScale.x * (1f + horizontalSpread - verticalStretch * 0.35f);
             float targetY = baseVisualScale.y * (1f - verticalCompress + verticalStretch);
@@ -655,10 +612,24 @@ namespace WaterBlob
 
         private bool CheckGround(out RaycastHit2D hit)
         {
-            Vector2 size = GetCastSize();
-            Vector2 origin = (Vector2)transform.position + Vector2.down * (size.y * 0.05f);
+            Bounds b = box.bounds;
+            float probeHeight = Mathf.Max(0.05f, b.size.y * groundProbeHeightFactor);
+            Vector2 size = new Vector2(b.size.x * castWidthFactor, probeHeight);
+            Vector2 origin = b.center;
+            origin.y = b.min.y + probeHeight * 0.5f + 0.005f;
             hit = Physics2D.BoxCast(origin, size, 0f, Vector2.down, groundCheckDistance, groundMask);
             return hit.collider != null;
+        }
+
+        private bool IsGroundHitValid(RaycastHit2D hit)
+        {
+            if (hit.collider == null)
+            {
+                return false;
+            }
+
+            float minGroundNormalY = Mathf.Cos(maxGroundAngle * Mathf.Deg2Rad);
+            return hit.normal.y >= minGroundNormalY;
         }
 
         private bool CheckWall(out RaycastHit2D hit, out int wallDirection)
