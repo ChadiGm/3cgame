@@ -2139,6 +2139,26 @@ MonoBehaviour:
   allowSlideAfterDash: 1
   slideBufferTime: 0.12
   dashBufferTime: 0.12
+  attackBufferTime: 0.12
+  projectileCooldown: 0.3
+  projectileSpeed: 11
+  projectileLaunchAngleDeg: 28
+  projectileForwardSpawnOffset: 1.2
+  projectileUpSpawnOffset: 0.35
+  projectileRadius: 0.42
+  projectilePointCount: 8
+  projectileLifetime: 3.5
+  projectileGravityScale: 1.7
+  projectileSpringFrequency: 11
+  projectileSpringDamping: 0.58
+  projectileInheritVelocity: 0.45
+  projectileLaunchRandomnessDeg: 1.5
+  projectileArmTime: 0.05
+  projectileMinImpactSpeed: 1
+  projectileHitMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  projectileHitTriggers: 0
   maxAngularVelocityDeg: 140
   inputRollSpeedDeg: 78
   velocityRollInfluence: 2.6
@@ -2161,6 +2181,7 @@ MonoBehaviour:
     m_Bits: 4294967295
   bounciness: 0.696
   friction: 0.12
+  waterLevel: 1
 --- !u!58 &1272719575
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -2171,7 +2192,7 @@ CircleCollider2D:
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
-  m_Material: {fileID: 1877003481}
+  m_Material: {fileID: 1448833237}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -2694,6 +2715,18 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 90.006}
+--- !u!62 &1448833237
+PhysicsMaterial2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: WaterBlobRuntime
+  serializedVersion: 2
+  friction: 0.12
+  bounciness: 0.696
+  m_FrictionCombine: 1
+  m_BounceCombine: 4
 --- !u!1 &1520349865
 GameObject:
   m_ObjectHideFlags: 0
@@ -3413,18 +3446,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0.141}
---- !u!62 &1877003481
-PhysicsMaterial2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: WaterBlobRuntime
-  serializedVersion: 2
-  friction: 0.12
-  bounciness: 0.696
-  m_FrictionCombine: 1
-  m_BounceCombine: 4
 --- !u!1 &1987169641
 GameObject:
   m_ObjectHideFlags: 0
@@ -3709,11 +3730,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 276507449221725811, guid: b185639ca756f974cb98cd021671e1b8, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -33.4
+      value: -22
       objectReference: {fileID: 0}
     - target: {fileID: 276507449221725811, guid: b185639ca756f974cb98cd021671e1b8, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 3
+      value: 12.2
       objectReference: {fileID: 0}
     - target: {fileID: 276507449221725811, guid: b185639ca756f974cb98cd021671e1b8, type: 3}
       propertyPath: m_LocalPosition.z
@@ -3766,11 +3787,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2047894969793357763, guid: 1941ed6c18c62da49987d211d2c79b12, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -27
+      value: -30.1
       objectReference: {fileID: 0}
     - target: {fileID: 2047894969793357763, guid: 1941ed6c18c62da49987d211d2c79b12, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 2
+      value: 22
       objectReference: {fileID: 0}
     - target: {fileID: 2047894969793357763, guid: 1941ed6c18c62da49987d211d2c79b12, type: 3}
       propertyPath: m_LocalPosition.z

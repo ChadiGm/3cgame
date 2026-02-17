@@ -3,7 +3,6 @@ using UnityEngine;
 namespace WaterBlob
 {
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(Collider2D))]
     public class RotatingObstacle2D : MonoBehaviour
     {
         [SerializeField] private float rotationSpeedDeg = 180f;

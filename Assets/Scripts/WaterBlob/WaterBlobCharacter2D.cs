@@ -90,6 +90,26 @@ namespace WaterBlob
         [Header("Input Buffer")]
         [Min(0f)] public float slideBufferTime = 0.12f;
         [Min(0f)] public float dashBufferTime = 0.12f;
+        [Min(0f)] public float attackBufferTime = 0.12f;
+
+        [Header("Attack Projectile")]
+        [Min(0f)] public float projectileCooldown = 0.3f;
+        [Min(0.2f)] public float projectileSpeed = 11f;
+        [Range(5f, 80f)] public float projectileLaunchAngleDeg = 28f;
+        [Min(0f)] public float projectileForwardSpawnOffset = 1.2f;
+        [Min(0f)] public float projectileUpSpawnOffset = 0.35f;
+        [Range(0.2f, 2.2f)] public float projectileRadius = 0.72f;
+        [Min(6)] public int projectilePointCount = 10;
+        [Min(0.1f)] public float projectileLifetime = 3.5f;
+        [Min(0f)] public float projectileGravityScale = 1.7f;
+        [Min(0f)] public float projectileSpringFrequency = 11f;
+        [Range(0f, 1f)] public float projectileSpringDamping = 0.58f;
+        [Range(0f, 1f)] public float projectileInheritVelocity = 0.45f;
+        [Range(0f, 12f)] public float projectileLaunchRandomnessDeg = 1.5f;
+        [Min(0f)] public float projectileArmTime = 0.05f;
+        [Min(0f)] public float projectileMinImpactSpeed = 1f;
+        public LayerMask projectileHitMask = ~0;
+        public bool projectileHitTriggers = false;
 
         [Header("Rotation Control")]
         [Min(0f)] public float maxAngularVelocityDeg = 140f;
@@ -148,6 +168,8 @@ namespace WaterBlob
         private float dashTimeRemaining;
         private float dashCooldownRemaining;
         private float dashPostLockoutRemaining;
+        private float attackBufferCounter;
+        private float projectileCooldownRemaining;
         private float currentCompression;
         private float dashDirectionSign = 1f;
         private float lastFacingSign = 1f;
@@ -186,6 +208,14 @@ namespace WaterBlob
             crouchCompressionRatio = Mathf.Clamp(crouchCompressionRatio, 0.2f, 1f);
             crouchMoveSpeedMultiplier = Mathf.Clamp(crouchMoveSpeedMultiplier, 0.1f, 1f);
             waterLevel = Mathf.Clamp01(waterLevel);
+            projectilePointCount = Mathf.Max(6, projectilePointCount);
+            projectileRadius = Mathf.Clamp(projectileRadius, 0.2f, 2.2f);
+            projectileLaunchAngleDeg = Mathf.Clamp(projectileLaunchAngleDeg, 5f, 80f);
+            projectileSpringDamping = Mathf.Clamp01(projectileSpringDamping);
+            projectileInheritVelocity = Mathf.Clamp01(projectileInheritVelocity);
+            projectileLaunchRandomnessDeg = Mathf.Clamp(projectileLaunchRandomnessDeg, 0f, 12f);
+            projectileArmTime = Mathf.Max(0f, projectileArmTime);
+            projectileMinImpactSpeed = Mathf.Max(0f, projectileMinImpactSpeed);
 
             EnsureCore();
             ApplyColliderMaterial();
@@ -212,6 +242,11 @@ namespace WaterBlob
             {
                 dashBufferCounter = dashBufferTime;
             }
+
+            if (input.ConsumeAttackPressed())
+            {
+                attackBufferCounter = attackBufferTime;
+            }
         }
 
         private void FixedUpdate()
@@ -227,6 +262,7 @@ namespace WaterBlob
             bool grounded = IsGrounded();
             HandleGrounding(grounded, dt);
             UpdateFacingDirection();
+            TryFireProjectile();
 
             if (currentLocomotionState != LocomotionState.Dash)
             {
@@ -330,10 +366,78 @@ namespace WaterBlob
             jumpBufferCounter = Mathf.Max(0f, jumpBufferCounter - dt);
             slideBufferCounter = Mathf.Max(0f, slideBufferCounter - dt);
             dashBufferCounter = Mathf.Max(0f, dashBufferCounter - dt);
+            attackBufferCounter = Mathf.Max(0f, attackBufferCounter - dt);
             slideTimeRemaining = Mathf.Max(0f, slideTimeRemaining - dt);
             dashTimeRemaining = Mathf.Max(0f, dashTimeRemaining - dt);
             dashCooldownRemaining = Mathf.Max(0f, dashCooldownRemaining - dt);
             dashPostLockoutRemaining = Mathf.Max(0f, dashPostLockoutRemaining - dt);
+            projectileCooldownRemaining = Mathf.Max(0f, projectileCooldownRemaining - dt);
+        }
+
+        private void TryFireProjectile()
+        {
+            if (attackBufferCounter <= 0f || projectileCooldownRemaining > 0f)
+            {
+                return;
+            }
+
+            FireProjectile();
+            attackBufferCounter = 0f;
+            projectileCooldownRemaining = projectileCooldown;
+        }
+
+        private void FireProjectile()
+        {
+            float directionSign = ResolveDashDirectionSign();
+            float angleRad = projectileLaunchAngleDeg * Mathf.Deg2Rad;
+            if (projectileLaunchRandomnessDeg > 0f)
+            {
+                float randomAngleRad = Random.Range(-projectileLaunchRandomnessDeg, projectileLaunchRandomnessDeg) * Mathf.Deg2Rad;
+                angleRad += randomAngleRad;
+            }
+
+            Vector2 launchDir = new(directionSign * Mathf.Cos(angleRad), Mathf.Sin(angleRad));
+            Vector2 spawnPos = coreBody.position + new Vector2(directionSign * projectileForwardSpawnOffset, projectileUpSpawnOffset);
+
+            GameObject projectileGo = new("SoftWaterProjectile");
+            projectileGo.transform.position = spawnPos;
+            projectileGo.transform.rotation = Quaternion.identity;
+
+            WaterBlobProjectileSoftBody2D projectile = projectileGo.AddComponent<WaterBlobProjectileSoftBody2D>();
+            projectile.Configure(
+                projectilePointCount,
+                projectileRadius,
+                projectileLifetime,
+                projectileGravityScale,
+                projectileSpringFrequency,
+                projectileSpringDamping,
+                projectileArmTime,
+                projectileMinImpactSpeed,
+                projectileHitMask,
+                projectileHitTriggers,
+                WaterLevel);
+
+            Vector2 initialVelocity = (launchDir * projectileSpeed) + (coreBody.linearVelocity * projectileInheritVelocity);
+            projectile.Launch(initialVelocity, GatherSelfCollidersForProjectileIgnore());
+        }
+
+        private Collider2D[] GatherSelfCollidersForProjectileIgnore()
+        {
+            List<Collider2D> colliders = new(2 + pointBodies.Count);
+            if (coreCollider != null)
+            {
+                colliders.Add(coreCollider);
+            }
+
+            for (int i = 0; i < pointColliders.Count; i++)
+            {
+                if (pointColliders[i] != null)
+                {
+                    colliders.Add(pointColliders[i]);
+                }
+            }
+
+            return colliders.ToArray();
         }
 
         private void HandleGrounding(bool grounded, float dt)
@@ -1120,6 +1224,8 @@ namespace WaterBlob
             dashTimeRemaining = 0f;
             dashCooldownRemaining = 0f;
             dashPostLockoutRemaining = 0f;
+            attackBufferCounter = 0f;
+            projectileCooldownRemaining = 0f;
             currentCompression = 0f;
             pendingJumpLaunchFrames = 0;
             dashDirectionSign = 1f;

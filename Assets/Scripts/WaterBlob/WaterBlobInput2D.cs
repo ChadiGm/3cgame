@@ -17,10 +17,12 @@ namespace WaterBlob
         public bool JumpHeld { get; private set; }
         public bool SlideHeld { get; private set; }
         public bool DashHeld { get; private set; }
+        public bool AttackHeld { get; private set; }
 
         private bool jumpQueued;
         private bool slideQueued;
         private bool dashQueued;
+        private bool attackQueued;
         private float smoothedMoveX;
 
         public bool ConsumeJumpPressed()
@@ -44,6 +46,13 @@ namespace WaterBlob
             return pressed;
         }
 
+        public bool ConsumeAttackPressed()
+        {
+            bool pressed = attackQueued;
+            attackQueued = false;
+            return pressed;
+        }
+
         private void Update()
         {
             ReadInput();
@@ -58,6 +67,8 @@ namespace WaterBlob
             bool slideHold = false;
             bool dashDown = false;
             bool dashHold = false;
+            bool attackDown = false;
+            bool attackHold = false;
 
 #if ENABLE_INPUT_SYSTEM
             Keyboard keyboard = Keyboard.current;
@@ -79,6 +90,15 @@ namespace WaterBlob
                 slideHold |= keyboard.leftCtrlKey.isPressed;
                 dashDown |= keyboard.leftShiftKey.wasPressedThisFrame;
                 dashHold |= keyboard.leftShiftKey.isPressed;
+                attackDown |= keyboard.eKey.wasPressedThisFrame;
+                attackHold |= keyboard.eKey.isPressed;
+            }
+
+            Mouse mouse = Mouse.current;
+            if (mouse != null)
+            {
+                attackDown |= mouse.leftButton.wasPressedThisFrame;
+                attackHold |= mouse.leftButton.isPressed;
             }
 
             Gamepad gamepad = Gamepad.current;
@@ -101,6 +121,8 @@ namespace WaterBlob
                 slideHold |= gamepad.leftShoulder.isPressed;
                 dashDown |= gamepad.rightShoulder.wasPressedThisFrame;
                 dashHold |= gamepad.rightShoulder.isPressed;
+                attackDown |= gamepad.buttonWest.wasPressedThisFrame;
+                attackHold |= gamepad.buttonWest.isPressed;
             }
 #else
             rawMoveX = Input.GetAxisRaw("Horizontal");
@@ -110,6 +132,8 @@ namespace WaterBlob
             slideHold = Input.GetKey(KeyCode.LeftControl);
             dashDown = Input.GetKeyDown(KeyCode.LeftShift);
             dashHold = Input.GetKey(KeyCode.LeftShift);
+            attackDown = Input.GetKeyDown(KeyCode.E) || Input.GetMouseButtonDown(0);
+            attackHold = Input.GetKey(KeyCode.E) || Input.GetMouseButton(0);
 #endif
 
             rawMoveX = Mathf.Clamp(rawMoveX, -1f, 1f);
@@ -120,6 +144,7 @@ namespace WaterBlob
             JumpHeld = jumpHold;
             SlideHeld = slideHold;
             DashHeld = dashHold;
+            AttackHeld = attackHold;
 
             if (jumpDown)
             {
@@ -134,6 +159,11 @@ namespace WaterBlob
             if (dashDown)
             {
                 dashQueued = true;
+            }
+
+            if (attackDown)
+            {
+                attackQueued = true;
             }
         }
     }
