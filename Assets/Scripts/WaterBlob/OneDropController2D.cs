@@ -322,20 +322,35 @@ namespace WaterBlob
             }
 
             // Shoot in the direction the player is facing (LEFT or RIGHT only)
-            Vector2 shootDirection = facingSign >= 0f ? Vector2.right : Vector2.left;
+            Vector3 shootDirection = facingSign >= 0f ? Vector3.right : Vector3.left;
 
             // Instantiate bullet with NO rotation (horizontal)
-            GameObject bullet = Instantiate(bulletPrefab, firePoint.position, Quaternion.identity);
-            Rigidbody2D bulletRb = bullet.GetComponent<Rigidbody2D>();
+            GameObject bulletObj = Instantiate(bulletPrefab, firePoint.position, Quaternion.identity);
 
-            if (bulletRb != null)
+            // Try Rigidbody2D first (2D physics)
+            Rigidbody2D bulletRb2D = bulletObj.GetComponent<Rigidbody2D>();
+            if (bulletRb2D != null)
             {
-                // Set velocity to HORIZONTAL only (x direction)
-                bulletRb.linearVelocity = shootDirection * bulletSpeed;
-
-                // Force gravity off on bullet if needed
-                bulletRb.gravityScale = 0f;
+                bulletRb2D.linearVelocity = (Vector2)(shootDirection * bulletSpeed);
+                bulletRb2D.gravityScale = 0f;
             }
+            else
+            {
+                // Fallback to 3D Rigidbody (e.g. Cube prefab)
+                Rigidbody bulletRb3D = bulletObj.GetComponent<Rigidbody>();
+                if (bulletRb3D != null)
+                {
+                    bulletRb3D.useGravity = false;
+                    bulletRb3D.linearVelocity = shootDirection * bulletSpeed;
+                    // Freeze Y and Z position so it stays horizontal
+                    bulletRb3D.constraints = RigidbodyConstraints.FreezePositionY
+                                           | RigidbodyConstraints.FreezePositionZ
+                                           | RigidbodyConstraints.FreezeRotation;
+                }
+            }
+
+            // Auto-destroy bullet after a few seconds
+            Destroy(bulletObj, 4f);
         }
         private void UpdateClimbState(bool touchingWall, int wallDirection)
         {
