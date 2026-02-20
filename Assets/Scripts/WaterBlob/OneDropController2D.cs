@@ -13,12 +13,6 @@ namespace WaterBlob
         [Header("References")]
         [SerializeField] private Transform visualRoot;
 
-        [Header("Shooting")]
-        [SerializeField] private Transform firePoint;
-        [SerializeField] private GameObject bulletPrefab;
-        [SerializeField] private GameObject gunSprite;
-        [SerializeField] private float bulletSpeed = 20f;
-
         [Header("Movement")]
         [SerializeField, Min(0f)] private float moveSpeed = 7f;
         [SerializeField, Min(0f)] private float acceleration = 55f;
@@ -87,7 +81,6 @@ namespace WaterBlob
         private float inputX;
         private float inputY;
         private bool jumpPressed;
-        private bool shootPressed;
         private bool isClimbing;
         private bool isSliding;
         private int climbWallDirection;
@@ -148,13 +141,6 @@ namespace WaterBlob
         private void Update()
         {
             ReadInput();
-            
-            // Handle shooting
-            if (shootPressed)
-            {
-                ShootHorizontal();
-                shootPressed = false;
-            }
         }
 
         private void FixedUpdate()
@@ -259,7 +245,6 @@ namespace WaterBlob
             bool jumpDown = false;
             bool leftTapDown = false;
             bool rightTapDown = false;
-            bool shootDown = false;
 
 #if ENABLE_INPUT_SYSTEM
             Keyboard keyboard = Keyboard.current;
@@ -274,7 +259,6 @@ namespace WaterBlob
                 jumpDown |= keyboard.spaceKey.wasPressedThisFrame;
                 leftTapDown |= keyboard.aKey.wasPressedThisFrame || keyboard.leftArrowKey.wasPressedThisFrame;
                 rightTapDown |= keyboard.dKey.wasPressedThisFrame || keyboard.rightArrowKey.wasPressedThisFrame;
-                shootDown |= keyboard.jKey.wasPressedThisFrame;
             }
 
             Gamepad gamepad = Gamepad.current;
@@ -291,7 +275,6 @@ namespace WaterBlob
             jumpDown = Input.GetButtonDown("Jump");
             leftTapDown = Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow);
             rightTapDown = Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow);
-            shootDown = Input.GetKeyDown(KeyCode.J);
 #endif
 
             inputX = Mathf.Clamp(x, -1f, 1f);
@@ -300,57 +283,8 @@ namespace WaterBlob
             {
                 jumpPressed = true;
             }
-            if (shootDown)
-            {
-                shootPressed = true;
-            }
 
             ProcessDoubleTapSlide(leftTapDown, rightTapDown);
-        }
-
-        private void ShootHorizontal()
-        {
-            if (bulletPrefab == null || firePoint == null)
-            {
-                return;
-            }
-
-            // Rotate gun to horizontal (0 degrees)
-            if (gunSprite != null)
-            {
-                gunSprite.transform.rotation = Quaternion.Euler(0, 0, 0);
-            }
-
-            // Shoot in the direction the player is facing (LEFT or RIGHT only)
-            Vector3 shootDirection = facingSign >= 0f ? Vector3.right : Vector3.left;
-
-            // Instantiate bullet with NO rotation (horizontal)
-            GameObject bulletObj = Instantiate(bulletPrefab, firePoint.position, Quaternion.identity);
-
-            // Try Rigidbody2D first (2D physics)
-            Rigidbody2D bulletRb2D = bulletObj.GetComponent<Rigidbody2D>();
-            if (bulletRb2D != null)
-            {
-                bulletRb2D.linearVelocity = (Vector2)(shootDirection * bulletSpeed);
-                bulletRb2D.gravityScale = 0f;
-            }
-            else
-            {
-                // Fallback to 3D Rigidbody (e.g. Cube prefab)
-                Rigidbody bulletRb3D = bulletObj.GetComponent<Rigidbody>();
-                if (bulletRb3D != null)
-                {
-                    bulletRb3D.useGravity = false;
-                    bulletRb3D.linearVelocity = shootDirection * bulletSpeed;
-                    // Freeze Y and Z position so it stays horizontal
-                    bulletRb3D.constraints = RigidbodyConstraints.FreezePositionY
-                                           | RigidbodyConstraints.FreezePositionZ
-                                           | RigidbodyConstraints.FreezeRotation;
-                }
-            }
-
-            // Auto-destroy bullet after a few seconds
-            Destroy(bulletObj, 4f);
         }
         private void UpdateClimbState(bool touchingWall, int wallDirection)
         {
