@@ -378,12 +378,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 264451373}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 5.86, y: -0.44, z: 0}
-  m_LocalScale: {x: 7.5435, y: 0.868, z: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 2.6433356, y: 0.5875576, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 2128761840}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &330585543
 GameObject:
@@ -904,12 +904,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 446839131}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 16.41, y: -1.11, z: 0}
-  m_LocalScale: {x: 7.5435, y: 0.868, z: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 4.0418906, y: -0.18433183, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 2128761840}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &832575517
 GameObject:
@@ -1219,6 +1219,7 @@ GameObject:
   - component: {fileID: 1272719579}
   - component: {fileID: 1272719581}
   - component: {fileID: 1272719580}
+  - component: {fileID: 1272719582}
   m_Layer: 0
   m_Name: WaterBlobPlayer
   m_TagString: Untagged
@@ -1478,7 +1479,7 @@ CircleCollider2D:
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
-  m_Material: {fileID: 1561000660}
+  m_Material: {fileID: 1358266045}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -1604,10 +1605,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WaterBlob.OneDropController2D
   visualRoot: {fileID: 0}
-  firePoint: {fileID: 1032455119}
-  bulletPrefab: {fileID: 3903840158125997201, guid: 09b37b94458ba74408a8645f2d0ecdef, type: 3}
-  gunSprite: {fileID: 1272719569}
-  bulletSpeed: 20
   moveSpeed: 30
   acceleration: 60
   minAccelerationFromSpeed: 4
@@ -1703,6 +1700,45 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
+--- !u!114 &1272719582
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1272719569}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9868fdf15a879484b9c8e5caef87a008, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  firePoint: {fileID: 1032455119}
+  bulletPrefab: {fileID: 3903840158125997201, guid: 09b37b94458ba74408a8645f2d0ecdef, type: 3}
+  gunSprite: {fileID: 1272719569}
+  bulletSpeed: 20
+  shootCooldown: 0.12
+  bulletLifetime: 4
+  muzzleEffectPrefab: {fileID: 947802411668117706, guid: 6323ce8a4fdd97d4999e8f352cd48d20, type: 3}
+  impactEffectPrefab: {fileID: 5898152396035307993, guid: 01cccd02d2de05d44b4f441003a4c2ea, type: 3}
+  giveBloblVisualToBullet: 1
+  bulletAttackableLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  bulletIgnoredLayers:
+    serializedVersion: 2
+    m_Bits: 1
+--- !u!62 &1358266045
+PhysicsMaterial2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: WaterBlobRuntime
+  serializedVersion: 2
+  friction: 0.1
+  bounciness: 0.24
+  m_FrictionCombine: 1
+  m_BounceCombine: 4
 --- !u!1 &1362522099
 GameObject:
   m_ObjectHideFlags: 0
@@ -1836,18 +1872,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!62 &1561000660
-PhysicsMaterial2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: WaterBlobRuntime
-  serializedVersion: 2
-  friction: 0.1
-  bounciness: 0.24
-  m_FrictionCombine: 1
-  m_BounceCombine: 4
 --- !u!1 &1847706871
 GameObject:
   m_ObjectHideFlags: 0
@@ -1974,12 +1998,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1847706871}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -3.83, y: 1.39, z: 0}
-  m_LocalScale: {x: 7.5435, y: 0.868, z: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 1.3587859, y: 2.6958525, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 2128761840}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1864366486
 GameObject:
@@ -2107,12 +2131,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1864366486}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 22.95, y: 2.09, z: 0}
-  m_LocalScale: {x: 7.5435, y: 0.868, z: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 4.908862, y: 3.502304, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 2128761840}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2019425420
 GameObject:
@@ -2240,12 +2264,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2019425420}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 5.86, y: 2.69, z: 0}
-  m_LocalScale: {x: 7.5435, y: 0.868, z: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 2.6433356, y: 4.1935487, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 2128761840}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2128761836
 GameObject:
@@ -2377,7 +2401,12 @@ Transform:
   m_LocalPosition: {x: -14.08, y: -0.95, z: 0}
   m_LocalScale: {x: 7.5435, y: 0.868, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1847706875}
+  - {fileID: 2019425424}
+  - {fileID: 446839135}
+  - {fileID: 1864366490}
+  - {fileID: 264451377}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
@@ -2394,8 +2423,3 @@ SceneRoots:
   - {fileID: 903849896}
   - {fileID: 352743563}
   - {fileID: 2128761840}
-  - {fileID: 1847706875}
-  - {fileID: 2019425424}
-  - {fileID: 446839135}
-  - {fileID: 1864366490}
-  - {fileID: 264451377}

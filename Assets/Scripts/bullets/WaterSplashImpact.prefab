@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &5898152396035307993
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5810763705902287592}
+  - component: {fileID: 5062952601911382769}
+  m_Layer: 0
+  m_Name: WaterSplashImpact
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5810763705902287592
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5898152396035307993}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5062952601911382769
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5898152396035307993}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f485803e36f064644a0b8090b761aa9e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  burstCount: 12
+  lifetime: 0.6
+  startSize: 0.18
+  endSize: 0.02
+  startSpeed: 3.5
+  startColor: {r: 0.25, g: 0.78, b: 1, a: 0.85}
+  endColor: {r: 0.6, g: 0.92, b: 1, a: 0}
+  gravityModifier: 0.8
+  sortingOrder: 15
+  enableRingWave: 1
+  ringDuration: 0.35
+  ringStartRadius: 0.1
+  ringEndRadius: 0.6
+  ringColor: {r: 0.82, g: 0.95, b: 1, a: 0.7}
