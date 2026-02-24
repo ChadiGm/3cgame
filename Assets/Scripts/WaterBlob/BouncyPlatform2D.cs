@@ -13,6 +13,7 @@ namespace WaterBlob
         [SerializeField] private float verticalFrequency = 0.5f;
         [SerializeField] private float phaseOffsetDegrees;
         [SerializeField] private bool useUnscaledTime;
+        [SerializeField] private bool externallyDriven;
 
         private Rigidbody2D platformBody;
         private Vector2 startPosition;
@@ -25,6 +26,11 @@ namespace WaterBlob
 
         private void FixedUpdate()
         {
+            if (externallyDriven)
+            {
+                return;
+            }
+
             float time = useUnscaledTime ? Time.fixedUnscaledTime : Time.fixedTime;
             float phase = phaseOffsetDegrees * Mathf.Deg2Rad;
             float offsetY = Mathf.Sin((time * Mathf.PI * 2f * Mathf.Max(0f, verticalFrequency)) + phase) * Mathf.Max(0f, verticalAmplitude);
@@ -37,6 +43,11 @@ namespace WaterBlob
             }
 
             transform.position = target;
+        }
+
+        public void SetExternallyDriven(bool value)
+        {
+            externallyDriven = value;
         }
 
         private void OnTriggerEnter2D(Collider2D other)

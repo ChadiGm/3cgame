@@ -42,6 +42,11 @@ namespace WaterBlob
         [SerializeField] private Color edgeColor = new(0.82f, 0.97f, 1f, 0.95f);
         [SerializeField] private float edgeWidth = 0.075f;
 
+        [Header("Gameplay Plane")]
+        [SerializeField] private bool lockToGameplayPlane = true;
+        [SerializeField] private float gameplayPlaneZ = 0f;
+        [SerializeField] private float zPositionLerpSharpness = 18f;
+
         private readonly List<Rigidbody2D> nodeBodies = new();
         private readonly List<CircleCollider2D> nodeColliders = new();
         private readonly List<SpringJoint2D> coreSprings = new();
@@ -73,6 +78,8 @@ namespace WaterBlob
 
         private void FixedUpdate()
         {
+            ApplyGameplayPlaneConstraint(Time.fixedDeltaTime);
+
             if (!launched)
             {
                 return;
@@ -145,6 +152,7 @@ namespace WaterBlob
         public void Launch(Vector2 initialVelocity, Collider2D[] ignoreColliders)
         {
             EnsureBuilt();
+            ApplyGameplayPlaneConstraint(0f);
 
             if (ignoreColliders != null)
             {
@@ -169,6 +177,14 @@ namespace WaterBlob
             launched = true;
             int launchSplashCount = Mathf.RoundToInt(Mathf.Lerp(14f, 28f, Mathf.InverseLerp(0.35f, 1.4f, radius)));
             EmitSplash(launchSplashCount, initialVelocity * 0.12f);
+        }
+
+        public void ApplyGameplayPlaneSettings(bool shouldLock, float planeZ, float zLerpSharpness)
+        {
+            lockToGameplayPlane = shouldLock;
+            gameplayPlaneZ = planeZ;
+            zPositionLerpSharpness = Mathf.Max(0f, zLerpSharpness);
+            ApplyGameplayPlaneConstraint(0f);
         }
 
         public void ReportImpact(Collider2D other)
@@ -208,6 +224,33 @@ namespace WaterBlob
 
             float splashLife = splashParticles != null ? splashParticles.main.startLifetime.constantMax : 0.4f;
             DestroySelf(Mathf.Max(0.12f, splashLife + 0.08f));
+        }
+
+        private void ApplyGameplayPlaneConstraint(float dt)
+        {
+            if (!lockToGameplayPlane)
+            {
+                return;
+            }
+
+            float sharpness = Mathf.Max(0.0001f, zPositionLerpSharpness);
+            float t = dt <= 0f ? 1f : 1f - Mathf.Exp(-sharpness * dt);
+            Vector3 corePosition = transform.position;
+            corePosition.z = Mathf.Lerp(corePosition.z, gameplayPlaneZ, t);
+            transform.position = corePosition;
+
+            for (int i = 0; i < nodeBodies.Count; i++)
+            {
+                Rigidbody2D node = nodeBodies[i];
+                if (node == null)
+                {
+                    continue;
+                }
+
+                Vector3 nodePosition = node.transform.position;
+                nodePosition.z = Mathf.Lerp(nodePosition.z, gameplayPlaneZ, t);
+                node.transform.position = nodePosition;
+            }
         }
 
         private void EnsureBuilt()

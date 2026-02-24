@@ -8,6 +8,7 @@ namespace WaterBlob
         [SerializeField] private float rotationSpeedDeg = 180f;
         [SerializeField] private bool useUnscaledTime;
         [SerializeField] private bool usePhysicsRotation = true;
+        [SerializeField] private bool externallyDriven;
 
         private Rigidbody2D cachedBody;
 
@@ -18,6 +19,11 @@ namespace WaterBlob
 
         private void FixedUpdate()
         {
+            if (externallyDriven)
+            {
+                return;
+            }
+
             if (!usePhysicsRotation || cachedBody == null)
             {
                 return;
@@ -30,6 +36,11 @@ namespace WaterBlob
 
         private void Update()
         {
+            if (externallyDriven)
+            {
+                return;
+            }
+
             if (usePhysicsRotation && cachedBody != null)
             {
                 return;
@@ -37,6 +48,11 @@ namespace WaterBlob
 
             float dt = useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
             transform.Rotate(0f, 0f, rotationSpeedDeg * dt, Space.Self);
+        }
+
+        public void SetExternallyDriven(bool value)
+        {
+            externallyDriven = value;
         }
     }
 }

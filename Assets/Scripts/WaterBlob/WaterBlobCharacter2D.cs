@@ -7,7 +7,7 @@ namespace WaterBlob
     [RequireComponent(typeof(WaterBlobInput2D))]
     [RequireComponent(typeof(Rigidbody2D))]
     [RequireComponent(typeof(CircleCollider2D))]
-    public class WaterBlobCharacter2D : MonoBehaviour
+    public class WaterBlobCharacter2D : MonoBehaviour, IGameplay2DProxySource
     {
         private enum LocomotionState
         {
@@ -140,10 +140,18 @@ namespace WaterBlob
         [Header("Water Level")]
         [Range(0f, 1f)] public float waterLevel = 1f;
 
+        [Header("Gameplay Plane")]
+        public bool lockToGameplayPlane = true;
+        public float gameplayPlaneZ = 0f;
+        [Min(0f)] public float zPositionLerpSharpness = 18f;
+
         public IReadOnlyList<Rigidbody2D> PointBodies => pointBodies;
         public Rigidbody2D CoreBody => coreBody;
         public float Radius => radius;
         public float WaterLevel => Mathf.Clamp01(waterLevel);
+        public float GameplayPlaneZ => gameplayPlaneZ;
+        public bool PlaneLockEnabled => lockToGameplayPlane;
+        public Transform ProxySourceTransform => transform;
         public string LocomotionStateName => currentLocomotionState.ToString();
         public bool IsDashing => currentLocomotionState == LocomotionState.Dash;
         public bool IsSliding => currentLocomotionState == LocomotionState.Slide;
@@ -216,9 +224,11 @@ namespace WaterBlob
             projectileLaunchRandomnessDeg = Mathf.Clamp(projectileLaunchRandomnessDeg, 0f, 12f);
             projectileArmTime = Mathf.Max(0f, projectileArmTime);
             projectileMinImpactSpeed = Mathf.Max(0f, projectileMinImpactSpeed);
+            zPositionLerpSharpness = Mathf.Max(0f, zPositionLerpSharpness);
 
             EnsureCore();
             ApplyColliderMaterial();
+            ApplyGameplayPlaneConstraint(0f);
         }
 
         private void Update()
@@ -302,6 +312,7 @@ namespace WaterBlob
             }
 
             ClampHorizontalSpeed();
+            ApplyGameplayPlaneConstraint(dt);
         }
 
         [ContextMenu("Rebuild Blob")]
@@ -358,7 +369,42 @@ namespace WaterBlob
 
             IgnoreInternalCollisions();
             ApplyCoreSettings();
+            ApplyGameplayPlaneConstraint(0f);
             ResetLocomotionState();
+        }
+
+        private void ApplyGameplayPlaneConstraint(float dt)
+        {
+            if (!lockToGameplayPlane)
+            {
+                return;
+            }
+
+            float sharpness = Mathf.Max(0.0001f, zPositionLerpSharpness);
+            float t = dt <= 0f ? 1f : 1f - Mathf.Exp(-sharpness * dt);
+            Vector3 corePosition = transform.position;
+            corePosition.z = Mathf.Lerp(corePosition.z, gameplayPlaneZ, t);
+            transform.position = corePosition;
+
+            if (pointsRoot != null)
+            {
+                Vector3 rootPosition = pointsRoot.position;
+                rootPosition.z = Mathf.Lerp(rootPosition.z, gameplayPlaneZ, t);
+                pointsRoot.position = rootPosition;
+            }
+
+            for (int i = 0; i < pointBodies.Count; i++)
+            {
+                Rigidbody2D node = pointBodies[i];
+                if (node == null)
+                {
+                    continue;
+                }
+
+                Vector3 nodePosition = node.transform.position;
+                nodePosition.z = Mathf.Lerp(nodePosition.z, gameplayPlaneZ, t);
+                node.transform.position = nodePosition;
+            }
         }
 
         private void TickTimers(float dt)
@@ -416,6 +462,7 @@ namespace WaterBlob
                 projectileHitMask,
                 projectileHitTriggers,
                 WaterLevel);
+            projectile.ApplyGameplayPlaneSettings(lockToGameplayPlane, gameplayPlaneZ, zPositionLerpSharpness);
 
             Vector2 initialVelocity = (launchDir * projectileSpeed) + (coreBody.linearVelocity * projectileInheritVelocity);
             projectile.Launch(initialVelocity, GatherSelfCollidersForProjectileIgnore());

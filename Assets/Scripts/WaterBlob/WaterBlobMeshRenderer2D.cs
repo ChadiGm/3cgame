@@ -16,6 +16,7 @@ namespace WaterBlob
         public Color edgeColor = new(0.82f, 0.95f, 1f, 0.95f);
         [Min(0.005f)] public float edgeWidth = 0.12f;
         [Range(0f, 0.8f)] public float smoothing = 0.28f;
+        public float renderZOffset = -0.02f;
         public int sortingOrder = 10;
 
         private Mesh mesh;
@@ -76,7 +77,9 @@ namespace WaterBlob
             {
                 if (points[i] != null)
                 {
-                    worldPoints.Add(points[i].position);
+                    Vector3 p = points[i].position;
+                    p.z = blob.PlaneLockEnabled ? blob.GameplayPlaneZ + renderZOffset : p.z + renderZOffset;
+                    worldPoints.Add(p);
                 }
             }
 

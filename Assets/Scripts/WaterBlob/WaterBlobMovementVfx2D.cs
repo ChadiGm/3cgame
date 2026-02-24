@@ -26,6 +26,7 @@ namespace WaterBlob
         [SerializeField] private float minTrailRendererSpeed = 1f;
         [SerializeField] private float trailRendererTimeAtMaxSpeed = 0.2f;
         [SerializeField] private float trailRendererWidth = 0.34f;
+        [SerializeField] private float renderZOffset = -0.06f;
 
         [Header("Move Droplets")]
         [SerializeField] private float minDropletSpeed = 3.25f;
@@ -86,6 +87,8 @@ namespace WaterBlob
             float verticalVelocity = coreBody.linearVelocity.y;
             bool isSliding = blob.IsSliding;
             bool isCrouching = blob.IsCrouching;
+
+            ApplyDepthAnchoring();
 
             UpdateTrailEmission(speed, grounded);
             UpdateTrailRenderer(speed, grounded);
@@ -347,7 +350,7 @@ namespace WaterBlob
             if (existing == null)
             {
                 go.transform.SetParent(transform);
-                go.transform.localPosition = Vector3.zero;
+                go.transform.localPosition = new Vector3(0f, 0f, renderZOffset);
                 go.transform.localRotation = Quaternion.identity;
                 go.transform.localScale = Vector3.one;
             }
@@ -418,7 +421,7 @@ namespace WaterBlob
                 if (existing == null)
                 {
                     go.transform.SetParent(transform);
-                    go.transform.localPosition = Vector3.zero;
+                    go.transform.localPosition = new Vector3(0f, 0f, renderZOffset);
                     go.transform.localRotation = Quaternion.identity;
                     go.transform.localScale = Vector3.one;
                 }
@@ -455,6 +458,39 @@ namespace WaterBlob
                     new GradientAlphaKey(0f, 1f)
                 });
             movementTrail.colorGradient = gradient;
+        }
+
+        private void ApplyDepthAnchoring()
+        {
+            if (blob == null || !blob.PlaneLockEnabled)
+            {
+                return;
+            }
+
+            float targetZ = blob.GameplayPlaneZ + renderZOffset;
+            SetTransformDepth(trailParticles != null ? trailParticles.transform : null, targetZ);
+            SetTransformDepth(moveDropletsParticles != null ? moveDropletsParticles.transform : null, targetZ);
+            SetTransformDepth(dashPopParticles != null ? dashPopParticles.transform : null, targetZ);
+            SetTransformDepth(jumpParticles != null ? jumpParticles.transform : null, targetZ);
+            SetTransformDepth(slideScrapeParticles != null ? slideScrapeParticles.transform : null, targetZ);
+            SetTransformDepth(crouchPulseParticles != null ? crouchPulseParticles.transform : null, targetZ);
+            SetTransformDepth(landingSplashParticles != null ? landingSplashParticles.transform : null, targetZ);
+            if (movementTrail != null)
+            {
+                SetTransformDepth(movementTrail.transform, targetZ);
+            }
+        }
+
+        private static void SetTransformDepth(Transform target, float z)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            Vector3 p = target.position;
+            p.z = z;
+            target.position = p;
         }
 
         private Material GetOrCreateRuntimeVfxMaterial()

@@ -15,6 +15,7 @@ namespace WaterBlob
         [Min(0f)] public float anchorFollow = 16f;
         [Range(0f, 1f)] public float anchorRotationInfluence = 0.45f;
         public float depth = -0.35f;
+        public bool lockFaceToGameplayPlane = true;
 
         [Header("Eye Shape")]
         [Min(0.01f)] public float eyeSeparation = 0.45f;
@@ -72,7 +73,8 @@ namespace WaterBlob
             Vector2 baseOffset = normalizedOffset * radius;
             Vector2 orientedOffset = (Vector2)(Quaternion.Euler(0f, 0f, anchorAngle) * (Vector3)baseOffset);
 
-            Vector3 targetPosition = new(core.position.x + orientedOffset.x, core.position.y + orientedOffset.y, depth);
+            float targetDepth = lockFaceToGameplayPlane && blob.PlaneLockEnabled ? blob.GameplayPlaneZ + depth : depth;
+            Vector3 targetPosition = new(core.position.x + orientedOffset.x, core.position.y + orientedOffset.y, targetDepth);
             float anchorLerp = DampedLerp(anchorFollow, Time.deltaTime);
             faceRoot.position = Vector3.Lerp(faceRoot.position, targetPosition, anchorLerp);
 
@@ -107,7 +109,8 @@ namespace WaterBlob
 
             Transform parent = transform.parent;
             faceRoot.SetParent(parent, true);
-            faceRoot.position = new Vector3(transform.position.x, transform.position.y, depth);
+            float initialDepth = lockFaceToGameplayPlane && blob.PlaneLockEnabled ? blob.GameplayPlaneZ + depth : depth;
+            faceRoot.position = new Vector3(transform.position.x, transform.position.y, initialDepth);
             faceRoot.rotation = Quaternion.identity;
             faceRoot.localScale = Vector3.one;
 
