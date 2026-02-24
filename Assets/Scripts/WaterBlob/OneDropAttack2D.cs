@@ -396,8 +396,10 @@ namespace WaterBlob
             GameObject fx = new GameObject("EnemyVaporize_Runtime");
             fx.transform.position = position;
             ParticleSystem ps = fx.AddComponent<ParticleSystem>();
+            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
 
             var main = ps.main;
+            main.playOnAwake = false;
             main.duration = 0.4f;
             main.startLifetime = new ParticleSystem.MinMaxCurve(0.2f, 0.45f);
             main.startSpeed = new ParticleSystem.MinMaxCurve(1.5f, 3.5f);
@@ -446,13 +448,10 @@ namespace WaterBlob
                 )
             );
 
-            var velocityOverLifetime = ps.velocityOverLifetime;
-            velocityOverLifetime.enabled = true;
-            velocityOverLifetime.y = new ParticleSystem.MinMaxCurve(0.4f, 1.1f);
-
             var renderer = ps.GetComponent<ParticleSystemRenderer>();
             renderer.renderMode = ParticleSystemRenderMode.Billboard;
 
+            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             ps.Play();
             Destroy(fx, 1.2f);
         }

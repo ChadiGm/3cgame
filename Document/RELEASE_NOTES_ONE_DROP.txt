@@ -21,3 +21,16 @@ ONE DROP - Version 0.3 (Gameplay Fix Pass - 2026-02-15)
 - Jump stability fix: ground detection now validates floor normals and uses a dedicated foot probe to prevent false grounded states on platform edges/undersides.
 - Wall-jump spam fix: climb detach jump now triggers once per away-input transition and respects jump interval cooldown.
 - Eyes tracking fix: googly eyes now follow Rigidbody movement/velocity for OneDropController2D, so eyes react when moving and jumping left/right.
+
+ONE DROP - Version 0.4 (Combat + Enemy Pass - 2026-02-24)
+
+- Enemy gameplay added: patrol movement with turn-at-boundary behavior, wait time at endpoints, and run animation control.
+- Shooting gameplay expanded: OneDrop can fire bullets with cooldown, directional firing, and keyboard/gamepad input support.
+- Combat effects added: muzzle flash, impact splash, and enemy vaporization effect on valid kill targets.
+- Bullet visual polish: optional water-blob style bullet mesh/visual generation.
+- Target filtering system updated in `OneDropAttack2D`:
+- `bulletAttackableLayers`: layers that can be destroyed (recommended: Enemy).
+- `bulletNonDestructibleLayers`: layers that can be hit but must never be destroyed (recommended: Wall/Ground/Platform).
+- `bulletIgnoredLayers`: layers bullets pass through completely.
+- Bug fix: walls/platforms no longer disappear with vaporization when bullets hit them.
+- Architecture cleanup: bullet hit/destroy filtering is controlled from `OneDropAttack2D` runtime behavior for centralized combat rules.

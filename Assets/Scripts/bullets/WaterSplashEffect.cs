@@ -41,7 +41,9 @@ public class WaterSplashEffect : MonoBehaviour
     private void CreateSplashParticles()
     {
         ParticleSystem ps = gameObject.AddComponent<ParticleSystem>();
+        ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         var main = ps.main;
+        main.playOnAwake = false;
         main.duration = lifetime;
         main.loop = false;
         main.startLifetime = lifetime;
@@ -51,7 +53,6 @@ public class WaterSplashEffect : MonoBehaviour
         main.gravityModifier = gravityModifier;
         main.maxParticles = burstCount + 5;
         main.simulationSpace = ParticleSystemSimulationSpace.World;
-        main.playOnAwake = true;
 
         // Emission: single burst
         var emission = ps.emission;
@@ -107,6 +108,8 @@ public class WaterSplashEffect : MonoBehaviour
                 renderer.sharedMaterial = mat;
             }
         }
+
+        ps.Play();
     }
 
     private void CreateRingWave()

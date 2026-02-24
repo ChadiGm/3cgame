@@ -25,7 +25,9 @@ public class ShootMuzzleEffect : MonoBehaviour
     private void CreateMuzzleParticles()
     {
         ParticleSystem ps = gameObject.AddComponent<ParticleSystem>();
+        ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         var main = ps.main;
+        main.playOnAwake = false;
         main.duration = lifetime;
         main.loop = false;
         main.startLifetime = lifetime;
@@ -35,7 +37,6 @@ public class ShootMuzzleEffect : MonoBehaviour
         main.gravityModifier = 0f;
         main.maxParticles = burstCount + 2;
         main.simulationSpace = ParticleSystemSimulationSpace.World;
-        main.playOnAwake = true;
 
         // Emission: single burst
         var emission = ps.emission;
@@ -90,6 +91,8 @@ public class ShootMuzzleEffect : MonoBehaviour
                 renderer.sharedMaterial = mat;
             }
         }
+
+        ps.Play();
     }
 
     private static Shader FindBestShader()
