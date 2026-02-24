@@ -213,12 +213,13 @@ MonoBehaviour:
   lifeTime: 4
   attackableLayers:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 0
   ignoredLayers:
     serializedVersion: 2
     m_Bits: 0
   impactEffectPrefab: {fileID: 0}
-  showEyes: 1
+  vaporizationEffectPrefab: {fileID: 0}
+  showEyes: 0
   eyeSize: 0.06
   eyeSpacing: 0.08
   eyeHeight: 0.04

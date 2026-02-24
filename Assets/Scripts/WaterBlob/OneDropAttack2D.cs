@@ -22,19 +22,25 @@ namespace WaterBlob
 
         [Tooltip("Prefab for the impact / splash effect. Passed to the bullet. If null, bullet creates a default at runtime.")]
         [SerializeField] private GameObject impactEffectPrefab;
+        [Tooltip("Prefab for enemy vaporization. If null, a default vapor effect is created at runtime.")]
+        [SerializeField] private GameObject vaporizationEffectPrefab;
 
         [Header("Bullet Visual")]
         [Tooltip("If true, the bullet will automatically get a water-blob visual matching the character.")]
         [SerializeField] private bool giveBloblVisualToBullet = true;
 
         [Header("Target Filtering")]
-        [Tooltip("Layers the bullet CAN hit and explode on")]
-        [SerializeField] private LayerMask bulletAttackableLayers = ~0;
+        [Tooltip("Layers that bullets can destroy (recommended: Enemy only).")]
+        [SerializeField] private LayerMask bulletAttackableLayers = 0;
+
+        [Tooltip("Layers that bullets can hit but never destroy (recommended: Wall, Ground, Platform).")]
+        [SerializeField] private LayerMask bulletNonDestructibleLayers = 0;
 
         [Tooltip("Layers the bullet will completely ignore / pass through")]
         [SerializeField] private LayerMask bulletIgnoredLayers = 0;
 
         private float cooldownTimer;
+        private bool hasLoggedMissingRefs;
 
         private void Update()
         {
@@ -68,11 +74,22 @@ namespace WaterBlob
 
         private void ShootHorizontal()
         {
-            if (cooldownTimer > 0f || bulletPrefab == null || firePoint == null)
+            if (cooldownTimer > 0f)
             {
                 return;
             }
 
+            if (bulletPrefab == null || firePoint == null)
+            {
+                if (!hasLoggedMissingRefs)
+                {
+                    Debug.LogError("[OneDropAttack2D] Missing bulletPrefab or firePoint reference.", this);
+                    hasLoggedMissingRefs = true;
+                }
+                return;
+            }
+
+            hasLoggedMissingRefs = false;
             cooldownTimer = shootCooldown;
 
             float facingSign = transform.localScale.x >= 0f ? 1f : -1f;
@@ -94,14 +111,8 @@ namespace WaterBlob
                 EnsureBlobVisual(bulletObj);
             }
 
-            // --- Pass layer settings & impact prefab to bullet ---
-            bullet bulletScript = bulletObj.GetComponent<bullet>();
-            if (bulletScript == null)
-            {
-                bulletScript = bulletObj.AddComponent<bullet>();
-            }
-            // Use reflection-free approach: set public/serialized fields via helper
-            SetBulletSettings(bulletScript);
+            // --- Configure runtime bullet behavior from this attack script ---
+            ConfigureBulletRuntime(bulletObj);
 
             Rigidbody2D bulletRb2D = bulletObj.GetComponent<Rigidbody2D>();
             if (bulletRb2D != null)
@@ -173,32 +184,282 @@ namespace WaterBlob
         }
 
         /// <summary>
-        /// Passes attack/ignore layer masks and impact prefab to the bullet.
+        /// Adds runtime hit behavior to the bullet (attackable + ignored layers, effects, lifetime).
         /// </summary>
-        private void SetBulletSettings(bullet b)
+        private void ConfigureBulletRuntime(GameObject bulletObj)
         {
-            // Access serialized fields through the public lifeTime, but layer masks 
-            // and impact effect are private [SerializeField]. We use a small helper approach:
-            // The bullet exposes a Setup method for runtime assignment.
-            b.lifeTime = bulletLifetime;
-            b.RuntimeSetup(bulletAttackableLayers, bulletIgnoredLayers, impactEffectPrefab);
+            if (bulletObj == null)
+            {
+                return;
+            }
+
+            BulletRuntimeHandler handler = bulletObj.GetComponent<BulletRuntimeHandler>();
+            if (handler == null)
+            {
+                handler = bulletObj.AddComponent<BulletRuntimeHandler>();
+            }
+
+            handler.Setup(
+                bulletAttackableLayers,
+                bulletNonDestructibleLayers,
+                bulletIgnoredLayers,
+                impactEffectPrefab,
+                vaporizationEffectPrefab,
+                bulletLifetime
+            );
         }
 
         /// <summary>
-        /// Disables physics collisions between the bullet and all ignored layers.
+        /// Disables collisions only for this bullet against objects on ignored layers.
+        /// Avoids changing global layer collision rules at runtime.
         /// </summary>
         private void ApplyIgnoredLayerCollisions(GameObject bulletObj)
         {
-            if (bulletIgnoredLayers.value == 0) return;
-
-            int bulletLayer = bulletObj.layer;
-            for (int i = 0; i < 32; i++)
+            if (bulletObj == null || bulletIgnoredLayers.value == 0)
             {
-                if ((bulletIgnoredLayers.value & (1 << i)) != 0)
+                return;
+            }
+
+            Collider2D[] bulletColliders2D = bulletObj.GetComponentsInChildren<Collider2D>(true);
+            if (bulletColliders2D.Length > 0)
+            {
+                Collider2D[] sceneColliders2D = FindObjectsByType<Collider2D>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+                for (int i = 0; i < sceneColliders2D.Length; i++)
                 {
-                    Physics2D.IgnoreLayerCollision(bulletLayer, i, true);
+                    Collider2D other = sceneColliders2D[i];
+                    if (other == null || !other.enabled || !other.gameObject.activeInHierarchy || other.transform.IsChildOf(bulletObj.transform))
+                    {
+                        continue;
+                    }
+
+                    if (!IsLayerInMask(other.gameObject.layer, bulletIgnoredLayers))
+                    {
+                        continue;
+                    }
+
+                    for (int j = 0; j < bulletColliders2D.Length; j++)
+                    {
+                        Collider2D bulletCollider = bulletColliders2D[j];
+                        if (bulletCollider != null && bulletCollider.enabled && bulletCollider.gameObject.activeInHierarchy)
+                        {
+                            Physics2D.IgnoreCollision(bulletCollider, other, true);
+                        }
+                    }
                 }
             }
+
+            Collider[] bulletColliders3D = bulletObj.GetComponentsInChildren<Collider>(true);
+            if (bulletColliders3D.Length > 0)
+            {
+                Collider[] sceneColliders3D = FindObjectsByType<Collider>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+                for (int i = 0; i < sceneColliders3D.Length; i++)
+                {
+                    Collider other = sceneColliders3D[i];
+                    if (other == null || !other.enabled || !other.gameObject.activeInHierarchy || other.transform.IsChildOf(bulletObj.transform))
+                    {
+                        continue;
+                    }
+
+                    if (!IsLayerInMask(other.gameObject.layer, bulletIgnoredLayers))
+                    {
+                        continue;
+                    }
+
+                    for (int j = 0; j < bulletColliders3D.Length; j++)
+                    {
+                        Collider bulletCollider = bulletColliders3D[j];
+                        if (bulletCollider != null && bulletCollider.enabled && bulletCollider.gameObject.activeInHierarchy)
+                        {
+                            Physics.IgnoreCollision(bulletCollider, other, true);
+                        }
+                    }
+                }
+            }
+        }
+
+        private static bool IsLayerInMask(int layer, LayerMask mask)
+        {
+            return (mask.value & (1 << layer)) != 0;
+        }
+    }
+
+    internal class BulletRuntimeHandler : MonoBehaviour
+    {
+        private LayerMask attackableLayers;
+        private LayerMask nonDestructibleLayers;
+        private LayerMask ignoredLayers;
+        private GameObject impactEffectPrefab;
+        private GameObject vaporizationEffectPrefab;
+        private float lifeTime;
+        private bool initialized;
+
+        public void Setup(
+            LayerMask attackable,
+            LayerMask nonDestructible,
+            LayerMask ignored,
+            GameObject impactPrefab,
+            GameObject vaporizationPrefab,
+            float lifetimeSeconds
+        )
+        {
+            attackableLayers = attackable;
+            nonDestructibleLayers = nonDestructible;
+            ignoredLayers = ignored;
+            impactEffectPrefab = impactPrefab;
+            vaporizationEffectPrefab = vaporizationPrefab;
+            lifeTime = Mathf.Max(0.01f, lifetimeSeconds);
+            initialized = true;
+
+            Destroy(gameObject, lifeTime);
+        }
+
+        private void OnCollisionEnter2D(Collision2D collision)
+        {
+            if (!initialized || collision == null || collision.gameObject == null)
+            {
+                return;
+            }
+
+            HandleHit(
+                collision.gameObject.layer,
+                collision.rigidbody != null ? collision.rigidbody.gameObject : collision.gameObject,
+                collision.contactCount > 0 ? collision.GetContact(0).point : (Vector2)transform.position,
+                collision.contactCount > 0 ? collision.GetContact(0).normal : Vector2.up
+            );
+        }
+
+        private void OnCollisionEnter(Collision collision)
+        {
+            if (!initialized || collision == null || collision.gameObject == null)
+            {
+                return;
+            }
+
+            HandleHit(
+                collision.gameObject.layer,
+                collision.rigidbody != null ? collision.rigidbody.gameObject : collision.gameObject,
+                collision.contactCount > 0 ? collision.GetContact(0).point : transform.position,
+                collision.contactCount > 0 ? collision.GetContact(0).normal : Vector3.up
+            );
+        }
+
+        private void HandleHit(int otherLayer, GameObject target, Vector3 contactPoint, Vector3 contactNormal)
+        {
+            if (target == null)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            if (IsLayerInMask(otherLayer, ignoredLayers))
+            {
+                return;
+            }
+
+            SpawnImpactEffect(contactPoint, contactNormal);
+
+            bool canBeDestroyed = IsLayerInMask(otherLayer, attackableLayers) && !IsLayerInMask(otherLayer, nonDestructibleLayers);
+            if (canBeDestroyed)
+            {
+                SpawnVaporizationEffect(target.transform.position);
+                Destroy(target);
+            }
+
+            Destroy(gameObject);
+        }
+
+        private void SpawnImpactEffect(Vector3 position, Vector3 normal)
+        {
+            Vector3 safeNormal = normal.sqrMagnitude > 0.0001f ? normal.normalized : Vector3.up;
+            Quaternion rotation = Quaternion.LookRotation(Vector3.forward, safeNormal);
+
+            if (impactEffectPrefab != null)
+            {
+                Instantiate(impactEffectPrefab, position, rotation);
+                return;
+            }
+
+            GameObject fx = new GameObject("WaterSplash_Runtime");
+            fx.transform.position = position;
+            fx.transform.rotation = rotation;
+            fx.AddComponent<WaterSplashEffect>();
+        }
+
+        private void SpawnVaporizationEffect(Vector3 position)
+        {
+            if (vaporizationEffectPrefab != null)
+            {
+                Instantiate(vaporizationEffectPrefab, position, Quaternion.identity);
+                return;
+            }
+
+            GameObject fx = new GameObject("EnemyVaporize_Runtime");
+            fx.transform.position = position;
+            ParticleSystem ps = fx.AddComponent<ParticleSystem>();
+
+            var main = ps.main;
+            main.duration = 0.4f;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.2f, 0.45f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(1.5f, 3.5f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.06f, 0.16f);
+            main.startColor = new ParticleSystem.MinMaxGradient(
+                new Color(0.8f, 0.95f, 1f, 0.95f),
+                new Color(0.5f, 0.8f, 1f, 0.65f)
+            );
+            main.maxParticles = 120;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+
+            var emission = ps.emission;
+            emission.rateOverTime = 0f;
+            emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 48) });
+
+            var shape = ps.shape;
+            shape.shapeType = ParticleSystemShapeType.Sphere;
+            shape.radius = 0.2f;
+
+            var colorOverLifetime = ps.colorOverLifetime;
+            colorOverLifetime.enabled = true;
+            Gradient gradient = new Gradient();
+            gradient.SetKeys(
+                new[]
+                {
+                    new GradientColorKey(new Color(0.85f, 0.98f, 1f), 0f),
+                    new GradientColorKey(new Color(0.45f, 0.75f, 1f), 1f)
+                },
+                new[]
+                {
+                    new GradientAlphaKey(0.95f, 0f),
+                    new GradientAlphaKey(0.35f, 0.6f),
+                    new GradientAlphaKey(0f, 1f)
+                }
+            );
+            colorOverLifetime.color = new ParticleSystem.MinMaxGradient(gradient);
+
+            var sizeOverLifetime = ps.sizeOverLifetime;
+            sizeOverLifetime.enabled = true;
+            sizeOverLifetime.size = new ParticleSystem.MinMaxCurve(
+                1f,
+                new AnimationCurve(
+                    new Keyframe(0f, 0.8f),
+                    new Keyframe(0.5f, 1.15f),
+                    new Keyframe(1f, 0.1f)
+                )
+            );
+
+            var velocityOverLifetime = ps.velocityOverLifetime;
+            velocityOverLifetime.enabled = true;
+            velocityOverLifetime.y = new ParticleSystem.MinMaxCurve(0.4f, 1.1f);
+
+            var renderer = ps.GetComponent<ParticleSystemRenderer>();
+            renderer.renderMode = ParticleSystemRenderMode.Billboard;
+
+            ps.Play();
+            Destroy(fx, 1.2f);
+        }
+
+        private static bool IsLayerInMask(int layer, LayerMask mask)
+        {
+            return (mask.value & (1 << layer)) != 0;
         }
     }
 }
