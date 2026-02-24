@@ -39,16 +39,53 @@ namespace WaterBlob
         [Tooltip("Layers the bullet will completely ignore / pass through")]
         [SerializeField] private LayerMask bulletIgnoredLayers = 0;
 
+        [Header("Enemy Touch")]
+        [Tooltip("Enemy layers that can hurt the player on contact and vaporize on touch.")]
+        [SerializeField] private LayerMask touchEnemyLayers = 0;
+        [SerializeField, Min(1)] private int maxHealth = 3;
+        [SerializeField, Min(0f)] private float touchInvulnerabilityTime = 0.75f;
+        [Tooltip("Optional prefab for damage feedback on player touch hit.")]
+        [SerializeField] private GameObject playerDamageEffectPrefab;
+        [SerializeField] private Color damageFlashColor = new Color(1f, 0.25f, 0.25f, 0.9f);
+
         private float cooldownTimer;
+        private float touchInvulnerabilityTimer;
         private bool hasLoggedMissingRefs;
+        private int currentHealth;
+
+        private void Start()
+        {
+            currentHealth = Mathf.Max(1, maxHealth);
+        }
 
         private void Update()
         {
             cooldownTimer = Mathf.Max(0f, cooldownTimer - Time.deltaTime);
+            touchInvulnerabilityTimer = Mathf.Max(0f, touchInvulnerabilityTimer - Time.deltaTime);
             if (ReadShootPressedThisFrame())
             {
                 ShootHorizontal();
             }
+        }
+
+        private void OnCollisionEnter2D(Collision2D collision)
+        {
+            if (collision == null || collision.gameObject == null)
+            {
+                return;
+            }
+
+            TryHandleEnemyTouch(collision.gameObject, collision.rigidbody);
+        }
+
+        private void OnTriggerEnter2D(Collider2D other)
+        {
+            if (other == null || other.gameObject == null)
+            {
+                return;
+            }
+
+            TryHandleEnemyTouch(other.gameObject, other.attachedRigidbody);
         }
 
         private bool ReadShootPressedThisFrame()
@@ -280,6 +317,133 @@ namespace WaterBlob
         private static bool IsLayerInMask(int layer, LayerMask mask)
         {
             return (mask.value & (1 << layer)) != 0;
+        }
+
+        private void TryHandleEnemyTouch(GameObject touchedObject, Rigidbody2D touchedBody)
+        {
+            if (touchInvulnerabilityTimer > 0f || touchedObject == null)
+            {
+                return;
+            }
+
+            if (!IsLayerInMask(touchedObject.layer, touchEnemyLayers))
+            {
+                return;
+            }
+
+            GameObject enemyRoot = touchedBody != null ? touchedBody.gameObject : touchedObject;
+            SpawnEnemyTouchVaporization(enemyRoot.transform.position);
+            Destroy(enemyRoot);
+            ApplyTouchDamage();
+        }
+
+        private void ApplyTouchDamage()
+        {
+            touchInvulnerabilityTimer = touchInvulnerabilityTime;
+            currentHealth = Mathf.Max(0, currentHealth - 1);
+            SpawnPlayerDamageEffect(transform.position);
+
+            if (currentHealth <= 0)
+            {
+                currentHealth = Mathf.Max(1, maxHealth);
+                Debug.Log("[OneDropAttack2D] Player reached 0 HP from enemy touch.");
+            }
+        }
+
+        private void SpawnEnemyTouchVaporization(Vector3 position)
+        {
+            if (vaporizationEffectPrefab != null)
+            {
+                Instantiate(vaporizationEffectPrefab, position, Quaternion.identity);
+                return;
+            }
+
+            GameObject fx = new GameObject("EnemyTouchVapor_Runtime");
+            fx.transform.position = position;
+            ParticleSystem ps = fx.AddComponent<ParticleSystem>();
+            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
+            var main = ps.main;
+            main.playOnAwake = false;
+            main.duration = 0.35f;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.15f, 0.35f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(1.2f, 3.2f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.05f, 0.14f);
+            main.startColor = new ParticleSystem.MinMaxGradient(
+                new Color(0.85f, 0.98f, 1f, 0.95f),
+                new Color(0.45f, 0.75f, 1f, 0.6f)
+            );
+            main.maxParticles = 90;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+
+            var emission = ps.emission;
+            emission.rateOverTime = 0f;
+            emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 36) });
+
+            var shape = ps.shape;
+            shape.shapeType = ParticleSystemShapeType.Sphere;
+            shape.radius = 0.18f;
+
+            var renderer = ps.GetComponent<ParticleSystemRenderer>();
+            renderer.renderMode = ParticleSystemRenderMode.Billboard;
+
+            ps.Play();
+            Destroy(fx, 1f);
+        }
+
+        private void SpawnPlayerDamageEffect(Vector3 position)
+        {
+            if (playerDamageEffectPrefab != null)
+            {
+                Instantiate(playerDamageEffectPrefab, position, Quaternion.identity);
+                return;
+            }
+
+            GameObject fx = new GameObject("OneDropDamage_Runtime");
+            fx.transform.position = position;
+            ParticleSystem ps = fx.AddComponent<ParticleSystem>();
+            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
+            var main = ps.main;
+            main.playOnAwake = false;
+            main.duration = 0.2f;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.12f, 0.24f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(0.5f, 1.8f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.04f, 0.1f);
+            main.startColor = damageFlashColor;
+            main.maxParticles = 45;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+
+            var emission = ps.emission;
+            emission.rateOverTime = 0f;
+            emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 24) });
+
+            var shape = ps.shape;
+            shape.shapeType = ParticleSystemShapeType.Circle;
+            shape.radius = 0.16f;
+
+            var colorOverLifetime = ps.colorOverLifetime;
+            colorOverLifetime.enabled = true;
+            Gradient g = new Gradient();
+            g.SetKeys(
+                new[]
+                {
+                    new GradientColorKey(damageFlashColor, 0f),
+                    new GradientColorKey(damageFlashColor, 1f)
+                },
+                new[]
+                {
+                    new GradientAlphaKey(damageFlashColor.a, 0f),
+                    new GradientAlphaKey(0f, 1f)
+                }
+            );
+            colorOverLifetime.color = new ParticleSystem.MinMaxGradient(g);
+
+            var renderer = ps.GetComponent<ParticleSystemRenderer>();
+            renderer.renderMode = ParticleSystemRenderMode.Billboard;
+
+            ps.Play();
+            Destroy(fx, 0.8f);
         }
     }
 

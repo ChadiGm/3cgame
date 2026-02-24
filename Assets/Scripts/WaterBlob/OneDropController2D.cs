@@ -286,6 +286,7 @@ namespace WaterBlob
 
             ProcessDoubleTapSlide(leftTapDown, rightTapDown);
         }
+
         private void UpdateClimbState(bool touchingWall, int wallDirection)
         {
             bool movingTowardWall = touchingWall && Mathf.Abs(inputX) > 0.1f && Mathf.Sign(inputX) == wallDirection;
@@ -635,5 +636,6 @@ namespace WaterBlob
             box.sharedMaterial = runtimeMaterial;
             rb.sharedMaterial = runtimeMaterial;
         }
+
     }
 }
