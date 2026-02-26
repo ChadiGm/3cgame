@@ -34,3 +34,14 @@ ONE DROP - Version 0.4 (Combat + Enemy Pass - 2026-02-24)
 - `bulletIgnoredLayers`: layers bullets pass through completely.
 - Bug fix: walls/platforms no longer disappear with vaporization when bullets hit them.
 - Architecture cleanup: bullet hit/destroy filtering is controlled from `OneDropAttack2D` runtime behavior for centralized combat rules.
+
+ONE DROP - Version 0.5 (Water Resource + Death HUD Pass - 2026-02-25)
+
+- New gameplay resource: OneDrop now has a water level (max water pool) that drains during actions.
+- Drain actions implemented: movement over speed threshold, shooting, jumping, and sliding.
+- New top-center HUD gauge added at runtime to display remaining water.
+- HUD style update: transparent circular water fill effect with dynamic alpha based on remaining water.
+- Combat integration update: shooting is blocked automatically when water is empty.
+- Movement integration update: jump and slide actions consume configured water amounts.
+- Death rule implemented: when water reaches 0, OneDrop evaporates and player control/combat are disabled.
+- Death feedback added: vapor effect on player evaporation with optional prefab override.

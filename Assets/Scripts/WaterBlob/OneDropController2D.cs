@@ -8,6 +8,7 @@ namespace WaterBlob
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody2D))]
     [RequireComponent(typeof(BoxCollider2D))]
+    [RequireComponent(typeof(OneDropWaterResource2D))]
     public class OneDropController2D : MonoBehaviour
     {
         [Header("References")]
@@ -34,9 +35,16 @@ namespace WaterBlob
 
         [Header("Climbing")]
         [SerializeField, Min(0f)] private float climbSpeed = 4.8f;
+        [SerializeField, Min(0f)] private float climbAcceleration = 55f;
+        [SerializeField, Min(0f)] private float climbMinAccelFromSpeed = 4f;
         [SerializeField, Min(0f)] private float wallJumpHorizontalForce = 9.5f;
         [SerializeField, Min(0f)] private float wallJumpVerticalForce = 11f;
         [SerializeField] private float gravityWhenNotClimbing = 3f;
+        [Tooltip("Only walls in this layer mask can be climbed. If empty, Wall Mask is used.")]
+        [SerializeField] private LayerMask climbableWallMask = 0;
+        [SerializeField] private bool allowWallJumpWhileClimbing = false;
+        [Tooltip("Allow leaving the wall by pressing the direction away from the wall.")]
+        [SerializeField] private bool allowDetachByPressingAway = true;
 
         [Header("Detection")]
         [SerializeField] private LayerMask groundMask;
@@ -74,6 +82,14 @@ namespace WaterBlob
         [SerializeField, Min(0f)] private float wallDetachStretch = 0.12f;
         [SerializeField, Min(0f)] private float visualMomentumOffset = 0.09f;
 
+        [Header("Anti Crush")]
+        [Tooltip("Extra layers to test for low ceilings. If empty, uses Ground + Wall masks.")]
+        [SerializeField] private LayerMask ceilingMask = 0;
+        [SerializeField, Min(0.01f)] private float ceilingCheckDistance = 0.14f;
+        [SerializeField, Range(0.3f, 1f)] private float minVisualHeightScale = 0.82f;
+        [SerializeField, Range(0f, 1f)] private float ceilingCompressionDampen = 0.25f;
+        [SerializeField, Range(0f, 1f)] private float ceilingSpreadDampen = 0.55f;
+
         private Rigidbody2D rb;
         private BoxCollider2D box;
         private PhysicsMaterial2D runtimeMaterial;
@@ -107,13 +123,22 @@ namespace WaterBlob
         private bool visualRootIsSelf;
         private bool touchingWallThisStep;
         private int touchingWallDirection;
+        private bool touchingCeilingThisStep;
+        private float ceilingCompression01;
         private Vector2 currentGroundNormal = Vector2.up;
-        private bool wasPressingAwayFromWall;
+        private OneDropWaterResource2D waterResource;
+        private WaterBlobCharacter2D blobCharacter;
 
         private void Awake()
         {
             rb = GetComponent<Rigidbody2D>();
             box = GetComponent<BoxCollider2D>();
+            waterResource = GetComponent<OneDropWaterResource2D>();
+            if (waterResource == null)
+            {
+                waterResource = gameObject.AddComponent<OneDropWaterResource2D>();
+            }
+            blobCharacter = GetComponent<WaterBlobCharacter2D>();
             if (visualRoot == null)
             {
                 visualRoot = transform;
@@ -154,9 +179,12 @@ namespace WaterBlob
             RaycastHit2D groundHit = default;
             bool hasGroundHit = CheckGround(out groundHit);
             grounded = postJumpGroundIgnoreTimer <= 0f && hasGroundHit && IsGroundHitValid(groundHit);
-            bool touchingWall = CheckWall(out _, out int wallDirection);
+            bool touchingWall = CheckWall(out RaycastHit2D wallHit, out int wallDirection);
+            bool touchingCeiling = CheckCeiling(out _, out float ceilingCompress);
             touchingWallThisStep = touchingWall;
             touchingWallDirection = wallDirection;
+            touchingCeilingThisStep = touchingCeiling;
+            ceilingCompression01 = ceilingCompress;
             currentGroundNormal = groundHit.collider != null ? groundHit.normal : Vector2.up;
 
             if (isSliding && slideTimer <= 0f)
@@ -164,15 +192,13 @@ namespace WaterBlob
                 isSliding = false;
             }
 
-            UpdateClimbState(touchingWall, wallDirection);
+            bool touchingClimbWall = touchingWall && IsWallClimbable(wallHit);
+            UpdateClimbState(touchingClimbWall, wallDirection);
 
             if (isClimbing)
             {
                 ApplyClimbMovement();
-                bool pressingAwayFromWall = Mathf.Abs(inputX) > 0.1f && Mathf.Sign(inputX) == -climbWallDirection;
-                bool oppositeInputJump = pressingAwayFromWall && !wasPressingAwayFromWall;
-                wasPressingAwayFromWall = pressingAwayFromWall;
-                if ((jumpPressed || oppositeInputJump) && jumpIntervalTimer <= 0f)
+                if (allowWallJumpWhileClimbing && jumpPressed && jumpIntervalTimer <= 0f)
                 {
                     DoWallJump();
                 }
@@ -203,6 +229,12 @@ namespace WaterBlob
                     rb.linearVelocity = v;
                 }
                 cancelHorizontalForEdgeStick = false;
+            }
+
+            if (waterResource != null)
+            {
+                bool isMoving = Mathf.Abs(inputX) > 0.1f || isSliding || isClimbing;
+                waterResource.ConsumeMove(Time.fixedDeltaTime, isMoving);
             }
 
             ApplyRotation(groundHit);
@@ -254,7 +286,7 @@ namespace WaterBlob
                 bool rightPressed = keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed;
                 if (leftPressed) x -= 1f;
                 if (rightPressed) x += 1f;
-                if (keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed) y += 1f;
+                if (keyboard.wKey.isPressed || keyboard.zKey.isPressed || keyboard.upArrowKey.isPressed) y += 1f;
                 if (keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed) y -= 1f;
                 jumpDown |= keyboard.spaceKey.wasPressedThisFrame;
                 leftTapDown |= keyboard.aKey.wasPressedThisFrame || keyboard.leftArrowKey.wasPressedThisFrame;
@@ -289,22 +321,32 @@ namespace WaterBlob
 
         private void UpdateClimbState(bool touchingWall, int wallDirection)
         {
-            bool movingTowardWall = touchingWall && Mathf.Abs(inputX) > 0.1f && Mathf.Sign(inputX) == wallDirection;
+            bool horizontalInput = Mathf.Abs(inputX) > 0.1f;
+            bool movingTowardWall = touchingWall && horizontalInput && (wallDirection == 0 || Mathf.Sign(inputX) == wallDirection);
             bool pressingUp = inputY > 0.1f;
 
             if (!isClimbing)
             {
                 bool pressingDown = inputY < -0.1f;
-                if (!pressingDown && touchingWall && (pressingUp || movingTowardWall))
+                bool pushingIntoSomeWall = touchingWall && horizontalInput;
+                if (!pressingDown && touchingWall && (pressingUp || movingTowardWall || pushingIntoSomeWall))
                 {
                     isClimbing = true;
                     isSliding = false;
                     climbWallDirection = wallDirection == 0 ? (int)Mathf.Sign(facingSign) : wallDirection;
-                    wasPressingAwayFromWall = false;
                     rb.gravityScale = 0f;
                     rb.linearVelocity = Vector2.zero;
+                    SetBlobCharacterEnabled(false);
                 }
 
+                return;
+            }
+
+            // Detach if player presses direction away from wall
+            bool hasVerticalIntent = Mathf.Abs(inputY) > 0.1f;
+            if (allowDetachByPressingAway && horizontalInput && !hasVerticalIntent && climbWallDirection != 0 && Mathf.Sign(inputX) != climbWallDirection)
+            {
+                StopClimbing();
                 return;
             }
 
@@ -356,6 +398,10 @@ namespace WaterBlob
             slideTimer = slideDuration;
             slideCooldownTimer = slideCooldown;
             facingSign = direction;
+            if (waterResource != null)
+            {
+                waterResource.ConsumeSlide();
+            }
         }
 
         private void ApplyHorizontalMovement()
@@ -383,8 +429,29 @@ namespace WaterBlob
         private void ApplyClimbMovement()
         {
             rb.gravityScale = 0f;
-            float climbVelY = Mathf.Abs(inputY) > 0.05f ? inputY * climbSpeed : 0f;
-            rb.linearVelocity = new Vector2(0f, climbVelY);
+
+            // Acceleration-based vertical movement, mirroring ground horizontal movement
+            float targetY = inputY * climbSpeed;
+            float effAccel = Mathf.Max(climbAcceleration, climbSpeed * climbMinAccelFromSpeed);
+            float nextY = Mathf.MoveTowards(rb.linearVelocity.y, targetY, effAccel * Time.fixedDeltaTime);
+            rb.linearVelocity = new Vector2(0f, nextY);
+
+            if (blobCharacter != null && blobCharacter.PointBodies != null)
+            {
+                for (int i = 0; i < blobCharacter.PointBodies.Count; i++)
+                {
+                    Rigidbody2D pointBody = blobCharacter.PointBodies[i];
+                    if (pointBody == null)
+                    {
+                        continue;
+                    }
+
+                    Vector2 pv = pointBody.linearVelocity;
+                    pv.x = 0f;
+                    pv.y = nextY;
+                    pointBody.linearVelocity = pv;
+                }
+            }
 
             if (inputY < -0.05f)
             {
@@ -407,6 +474,10 @@ namespace WaterBlob
             rb.linearVelocity = v;
 
             rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+            if (waterResource != null)
+            {
+                waterResource.ConsumeJump();
+            }
         }
 
         private void DoWallJump()
@@ -424,14 +495,39 @@ namespace WaterBlob
 
             rb.AddForce(new Vector2(away * wallJumpHorizontalForce, wallJumpVerticalForce), ForceMode2D.Impulse);
             facingSign = away;
+            if (waterResource != null)
+            {
+                waterResource.ConsumeJump();
+            }
         }
 
         private void StopClimbing()
         {
             isClimbing = false;
             climbWallDirection = 0;
-            wasPressingAwayFromWall = false;
-            rb.gravityScale = gravityWhenNotClimbing;
+            // Restore gravity — use blob's value if present, otherwise our own
+            rb.gravityScale = (blobCharacter != null) ? blobCharacter.gravityScale : gravityWhenNotClimbing;
+            SetBlobCharacterEnabled(true);
+        }
+
+        private void SetBlobCharacterEnabled(bool enabled)
+        {
+            if (blobCharacter == null) return;
+
+            blobCharacter.enabled = enabled;
+
+            // Also manage point body gravity so the blob shape follows the core during climbing
+            if (blobCharacter.PointBodies != null)
+            {
+                float g = enabled ? blobCharacter.gravityScale : 0f;
+                for (int i = 0; i < blobCharacter.PointBodies.Count; i++)
+                {
+                    if (blobCharacter.PointBodies[i] != null)
+                    {
+                        blobCharacter.PointBodies[i].gravityScale = g;
+                    }
+                }
+            }
         }
 
         private void ApplyRotation(RaycastHit2D groundHit)
@@ -529,8 +625,16 @@ namespace WaterBlob
             horizontalSpread += wallDetachStretch * wallDetachPulse;
             verticalStretch += wallDetachStretch * wallDetachPulse * 0.32f;
 
+            if (touchingCeilingThisStep)
+            {
+                float damp = Mathf.Lerp(1f, ceilingCompressionDampen, ceilingCompression01);
+                verticalCompress *= damp;
+                horizontalSpread *= Mathf.Lerp(1f, ceilingSpreadDampen, ceilingCompression01);
+            }
+
             float targetXAbs = baseVisualScale.x * (1f + horizontalSpread - verticalStretch * 0.35f);
             float targetY = baseVisualScale.y * (1f - verticalCompress + verticalStretch);
+            targetY = Mathf.Max(baseVisualScale.y * minVisualHeightScale, targetY);
             float targetSign = visualRootIsSelf ? Mathf.Sign(facingSign) : Mathf.Sign(baseVisualScale.x);
             if (targetSign == 0f)
             {
@@ -586,6 +690,8 @@ namespace WaterBlob
         {
             Vector2 size = GetCastSize();
             int preferredDir = isClimbing ? climbWallDirection : (facingSign >= 0f ? 1 : -1);
+            LayerMask detectionMask = GetWallDetectionMask();
+            Vector2 castOrigin = box.bounds.center;
 
             Vector2 leftDir = Vector2.left;
             Vector2 rightDir = Vector2.right;
@@ -593,7 +699,7 @@ namespace WaterBlob
             bool TrySide(int dir, out RaycastHit2D sideHit)
             {
                 Vector2 castDir = dir > 0 ? rightDir : leftDir;
-                sideHit = Physics2D.BoxCast(transform.position, size, 0f, castDir, wallCheckDistance, wallMask);
+                sideHit = Physics2D.BoxCast(castOrigin, size, 0f, castDir, wallCheckDistance, detectionMask);
                 return sideHit.collider != null;
             }
 
@@ -617,6 +723,52 @@ namespace WaterBlob
 
             wallDirection = 0;
             return false;
+        }
+
+        private LayerMask GetWallDetectionMask()
+        {
+            if (climbableWallMask.value == 0)
+            {
+                return wallMask;
+            }
+
+            return wallMask | climbableWallMask;
+        }
+
+        private bool IsWallClimbable(RaycastHit2D hit)
+        {
+            if (hit.collider == null)
+            {
+                return false;
+            }
+
+            LayerMask effectiveClimbMask = climbableWallMask.value == 0 ? wallMask : climbableWallMask;
+            return IsLayerInMask(hit.collider.gameObject.layer, effectiveClimbMask);
+        }
+
+        private static bool IsLayerInMask(int layer, LayerMask mask)
+        {
+            return (mask.value & (1 << layer)) != 0;
+        }
+
+        private bool CheckCeiling(out RaycastHit2D hit, out float compression01)
+        {
+            Bounds b = box.bounds;
+            float probeHeight = Mathf.Max(0.05f, b.size.y * groundProbeHeightFactor);
+            Vector2 size = new Vector2(b.size.x * castWidthFactor, probeHeight);
+            Vector2 origin = b.center;
+            origin.y = b.max.y - probeHeight * 0.5f - 0.005f;
+
+            LayerMask mask = ceilingMask.value == 0 ? (groundMask | wallMask) : ceilingMask;
+            hit = Physics2D.BoxCast(origin, size, 0f, Vector2.up, ceilingCheckDistance, mask);
+            if (hit.collider == null)
+            {
+                compression01 = 0f;
+                return false;
+            }
+
+            compression01 = 1f - Mathf.Clamp01(hit.distance / Mathf.Max(0.0001f, ceilingCheckDistance));
+            return true;
         }
 
         private Vector2 GetCastSize()

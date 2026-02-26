@@ -52,10 +52,17 @@ namespace WaterBlob
         private float touchInvulnerabilityTimer;
         private bool hasLoggedMissingRefs;
         private int currentHealth;
+        private OneDropWaterResource2D waterResource;
+
+        private void Awake()
+        {
+            ResolveWaterResource();
+        }
 
         private void Start()
         {
             currentHealth = Mathf.Max(1, maxHealth);
+            ResolveWaterResource();
         }
 
         private void Update()
@@ -127,6 +134,10 @@ namespace WaterBlob
             }
 
             hasLoggedMissingRefs = false;
+            if (waterResource != null && !waterResource.ConsumeShoot())
+            {
+                return;
+            }
             cooldownTimer = shootCooldown;
 
             float facingSign = transform.localScale.x >= 0f ? 1f : -1f;
@@ -341,12 +352,30 @@ namespace WaterBlob
         {
             touchInvulnerabilityTimer = touchInvulnerabilityTime;
             currentHealth = Mathf.Max(0, currentHealth - 1);
+            if (waterResource != null)
+            {
+                waterResource.ConsumeDamage();
+            }
             SpawnPlayerDamageEffect(transform.position);
 
             if (currentHealth <= 0)
             {
                 currentHealth = Mathf.Max(1, maxHealth);
                 Debug.Log("[OneDropAttack2D] Player reached 0 HP from enemy touch.");
+            }
+        }
+
+        private void ResolveWaterResource()
+        {
+            if (waterResource != null)
+            {
+                return;
+            }
+
+            waterResource = GetComponent<OneDropWaterResource2D>();
+            if (waterResource == null)
+            {
+                waterResource = GetComponentInParent<OneDropWaterResource2D>();
             }
         }
 
