@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace WaterBlob
 {
@@ -7,6 +8,7 @@ namespace WaterBlob
     [RequireComponent(typeof(WaterBlobInput2D))]
     [RequireComponent(typeof(Rigidbody2D))]
     [RequireComponent(typeof(CircleCollider2D))]
+    [RequireComponent(typeof(WaterBlobWaterLevel2D))]
     public class WaterBlobCharacter2D : MonoBehaviour, IGameplay2DProxySource
     {
         private enum LocomotionState
@@ -138,7 +140,22 @@ namespace WaterBlob
         [Range(0f, 1f)] public float friction = 0.28f;
 
         [Header("Water Level")]
-        [Range(0f, 1f)] public float waterLevel = 1f;
+        [Tooltip("How much radius is gained per unit of waterLevel.  At 1.0 the blob is " +
+                 "(1 + waterSizeFactor) times the base radius.  Zero = no size change.")]
+        public float waterSizeFactor = 0.5f;
+        [SerializeField] private WaterBlobWaterLevel2D waterLevelSource;
+        [FormerlySerializedAs("waterLevel")]
+        [Range(0f, 1f)]
+        [SerializeField]
+        [HideInInspector]
+        private float legacyWaterLevel = 1f;
+        [SerializeField]
+        [HideInInspector]
+        private bool legacyWaterLevelMigrated;
+
+        // internal storage of the radius the designer set in the inspector; we use
+        // this as the base when modifying size due to water level.
+        private float baseRadius;
 
         [Header("Gameplay Plane")]
         public bool lockToGameplayPlane = true;
@@ -148,7 +165,7 @@ namespace WaterBlob
         public IReadOnlyList<Rigidbody2D> PointBodies => pointBodies;
         public Rigidbody2D CoreBody => coreBody;
         public float Radius => radius;
-        public float WaterLevel => Mathf.Clamp01(waterLevel);
+        public float WaterLevel => waterLevelSource != null ? waterLevelSource.WaterLevel : 1f;
         public float GameplayPlaneZ => gameplayPlaneZ;
         public bool PlaneLockEnabled => lockToGameplayPlane;
         public Transform ProxySourceTransform => transform;
@@ -156,6 +173,61 @@ namespace WaterBlob
         public bool IsDashing => currentLocomotionState == LocomotionState.Dash;
         public bool IsSliding => currentLocomotionState == LocomotionState.Slide;
         public bool IsCrouching => currentLocomotionState == LocomotionState.Crouch;
+
+        /// <summary>
+        /// Adjusts the blob's stored water level by the given amount (delta may be
+        /// positive or negative).  The value is clamped between 0 and 1 and the blob's
+        /// physical radius is updated immediately (a rebuild is triggered automatically
+        /// if necessary).
+        /// </summary>
+        public void ChangeWaterLevel(float delta)
+        {
+            EnsureWaterLevelSource();
+            waterLevelSource?.ChangeWaterLevel(delta);
+        }
+
+        /// <summary>
+        /// Convenience wrapper for <see cref="ChangeWaterLevel(float)"/> with a positive
+        /// amount.
+        /// </summary>
+        public void AddWater(float amount)
+        {
+            ChangeWaterLevel(amount);
+        }
+
+        /// <summary>
+        /// Convenience wrapper for <see cref="ChangeWaterLevel(float)"/> with a negative
+        /// amount.
+        /// </summary>
+        public void RemoveWater(float amount)
+        {
+            ChangeWaterLevel(-amount);
+        }
+
+        private bool needsRebuildDueToWater;
+        private bool isValidating;
+
+        private void ApplyWaterSize()
+        {
+            // scale radius based on waterLevel and factor.  Rebuild is deferred when
+            // the call comes from OnValidate so we don't modify the hierarchy during a
+            // validation callback (which triggers SendMessage errors).
+            radius = baseRadius * (1f + WaterLevel * waterSizeFactor);
+
+            if (!Application.isPlaying)
+            {
+                return;
+            }
+
+            if (isValidating)
+            {
+                needsRebuildDueToWater = true;
+            }
+            else
+            {
+                RebuildBlob();
+            }
+        }
 
         private readonly List<Rigidbody2D> pointBodies = new();
         private readonly List<CircleCollider2D> pointColliders = new();
@@ -189,13 +261,35 @@ namespace WaterBlob
         private void Awake()
         {
             input = GetComponent<WaterBlobInput2D>();
+            EnsureWaterLevelSource();
             if (GetComponent<WaterBlobMovementVfx2D>() == null)
             {
                 gameObject.AddComponent<WaterBlobMovementVfx2D>();
             }
-            WaterBlobWaterLevelHud.EnsureInScene(this);
+
+            // Remember the designer radius so we can scale it when water changes.
+            baseRadius = radius;
+            radius = baseRadius * (1f + WaterLevel * waterSizeFactor);
+
             EnsureCore();
             ResetLocomotionState();
+        }
+
+        private void OnEnable()
+        {
+            EnsureWaterLevelSource();
+            if (waterLevelSource != null)
+            {
+                waterLevelSource.WaterLevelChanged += HandleWaterLevelChanged;
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (waterLevelSource != null)
+            {
+                waterLevelSource.WaterLevelChanged -= HandleWaterLevelChanged;
+            }
         }
 
         private void Start()
@@ -208,6 +302,8 @@ namespace WaterBlob
 
         private void OnValidate()
         {
+            isValidating = true;
+
             if (pointCount < 8)
             {
                 pointCount = 8;
@@ -215,7 +311,22 @@ namespace WaterBlob
 
             crouchCompressionRatio = Mathf.Clamp(crouchCompressionRatio, 0.2f, 1f);
             crouchMoveSpeedMultiplier = Mathf.Clamp(crouchMoveSpeedMultiplier, 0.1f, 1f);
-            waterLevel = Mathf.Clamp01(waterLevel);
+            waterSizeFactor = Mathf.Max(0f, waterSizeFactor);
+            EnsureWaterLevelSource();
+
+            if (!Application.isPlaying)
+            {
+                // preserve base radius when editing; adjust effective radius so the
+                // inspector shows the scaled size but avoid creating points.
+                float scale = 1f + WaterLevel * waterSizeFactor;
+                baseRadius = scale > 0.0001f ? radius / scale : radius;
+                radius = baseRadius * scale;
+            }
+            else
+            {
+                ApplyWaterSize(); // rebuild is deferred if still validating
+            }
+
             projectilePointCount = Mathf.Max(6, projectilePointCount);
             projectileRadius = Mathf.Clamp(projectileRadius, 0.2f, 2.2f);
             projectileLaunchAngleDeg = Mathf.Clamp(projectileLaunchAngleDeg, 5f, 80f);
@@ -229,10 +340,21 @@ namespace WaterBlob
             EnsureCore();
             ApplyColliderMaterial();
             ApplyGameplayPlaneConstraint(0f);
+
+            isValidating = false;
         }
 
         private void Update()
         {
+            // if water-level changes were requested during validation, run the rebuild
+            // now outside of the OnValidate callback.  this avoids the "SendMessage
+            // cannot be called during Awake/CheckConsistency/OnValidate" errors.
+            if (needsRebuildDueToWater)
+            {
+                needsRebuildDueToWater = false;
+                RebuildBlob();
+            }
+
             if (input == null)
             {
                 return;
@@ -256,6 +378,26 @@ namespace WaterBlob
             if (input.ConsumeAttackPressed())
             {
                 attackBufferCounter = attackBufferTime;
+            }
+        }
+
+        private void HandleWaterLevelChanged(float _)
+        {
+            ApplyWaterSize();
+        }
+
+        private void EnsureWaterLevelSource()
+        {
+            waterLevelSource ??= GetComponent<WaterBlobWaterLevel2D>();
+            if (waterLevelSource == null)
+            {
+                waterLevelSource = gameObject.AddComponent<WaterBlobWaterLevel2D>();
+            }
+
+            if (!legacyWaterLevelMigrated && waterLevelSource != null)
+            {
+                waterLevelSource.SetWaterLevel(legacyWaterLevel);
+                legacyWaterLevelMigrated = true;
             }
         }
 

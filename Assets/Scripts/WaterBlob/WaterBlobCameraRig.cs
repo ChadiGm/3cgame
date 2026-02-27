@@ -7,6 +7,22 @@ namespace WaterBlob
 #endif
 
     [DefaultExecutionOrder(-80)]
+    /// <summary>
+    /// Drives whichever <see cref="Camera.main"/> exists (or any camera found) to follow
+    /// the player in a 2.5‑D side‑view.  By default the camera is in perspective with a
+    /// very steep angle so the result looks almost orthographic, but the rig can fall
+    /// back to orthographic for diagnostics.  The behaviour is smoothed with exponential
+    /// damping and optional look‑ahead, and the component can optionally instantiate a
+    /// <c>CinemachineVirtualCamera</c> to allow the rest of your project to use standard
+    /// Cinemachine workflow.
+    ///
+    /// <para>
+    /// New in this version: when <see cref="matchMainCameraOnStart"/> is set the rig will
+    /// copy the existing camera's rotation/FOV/clip planes on Awake.  This lets you author
+    /// the desired "almost orthographic" angle manually in the scene and have the rig
+    /// honour it instead of overriding with its own defaults.
+    /// </para>
+    /// </summary>
     public class WaterBlobCameraRig : MonoBehaviour
     {
         [SerializeField] private WaterBlobCharacter2D target;
@@ -14,6 +30,9 @@ namespace WaterBlob
         [Header("2.5D Camera Mode")]
         [SerializeField] private bool usePerspective = true;
         [SerializeField] private bool allowOrthographicFallback = true;
+        [Tooltip("If enabled the rig will grab the main camera's initial rotation, FOV/ortho size and clipping planes on Awake. " +
+                 "Useful when you've already placed and configured a camera in the scene and want the rig to respect it.")]
+        [SerializeField] private bool matchMainCameraOnStart = true;
         [SerializeField] private Vector3 sideViewEuler = new(8f, -88f, 0f);
         [SerializeField] private float distanceFromPlane = 14f;
         [SerializeField] private float followDepthBias = -1.2f;
@@ -32,7 +51,9 @@ namespace WaterBlob
 
 #if CINEMACHINE
         [Header("Cinemachine (Optional)")]
-        [SerializeField] private bool preferCinemachine;
+        [Tooltip("When true the rig will create / configure a virtual camera and drive the main camera via a CinemachineBrain. " +
+                 "Only makes sense if the Cinemachine package is present, but we compile around it already.")]
+        [SerializeField] private bool preferCinemachine = true;
         [SerializeField] private Vector2 screenCenter = new(0.45f, 0.5f);
         [SerializeField] private Vector3 damping = new(0.8f, 1.0f, 0.5f);
 
@@ -61,7 +82,33 @@ namespace WaterBlob
                 target = FindFirstObjectByType<WaterBlobCharacter2D>();
             }
 
-            mainCam = Camera.main ?? FindAnyObjectByType<Camera>();
+                mainCam = Camera.main ?? FindAnyObjectByType<Camera>();
+
+            // when authors have already placed a camera in the scene we want
+            // the rig to start from that orientation / FOV rather than
+            // forcing the default sideViewEuler, etc.
+            if (matchMainCameraOnStart && mainCam != null)
+            {
+                // copy rotation
+                sideViewEuler = mainCam.transform.rotation.eulerAngles;
+
+                // copy lens settings
+                if (mainCam.orthographic)
+                {
+                    usePerspective = false;
+                    allowOrthographicFallback = true;
+                    orthographicSize = mainCam.orthographicSize;
+                }
+                else
+                {
+                    usePerspective = true;
+                    perspectiveFov = mainCam.fieldOfView;
+                }
+
+                nearClip = mainCam.nearClipPlane;
+                farClip = mainCam.farClipPlane;
+            }
+
             EnsureCameraState();
 #if CINEMACHINE
             if (preferCinemachine)
@@ -188,6 +235,12 @@ namespace WaterBlob
             if (vcam == null)
             {
                 vcam = FindExistingVCam() ?? CreateVCam();
+                if (matchMainCameraOnStart && mainCam != null)
+                {
+                    // keep the virtual camera oriented the same way as the
+                    // existing scene camera so the transition is seamless.
+                    vcam.transform.rotation = mainCam.transform.rotation;
+                }
             }
 
             framing = vcam.GetCinemachineComponent<CinemachineFramingTransposer>() ??
