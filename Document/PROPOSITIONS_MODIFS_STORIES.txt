@@ -1,0 +1,62 @@
+MODIFICATIONS PROPOSEES POUR LES STORIES (ONE DROP)
+Date: 8 mars 2026
+Source: capture d’ecran + dashboard CSV
+
+1) Normaliser les codes (Story Code / Extended Code)
+- Unifier les variantes avec et sans zero:
+  * BOSS-1 / BOSS-01 -> choisir un seul format (ex: BOSS-01)
+  * BOSS-2 / BOSS-02 -> choisir un seul format (ex: BOSS-02)
+  * ENEMY-1 / ENEMY-01 -> choisir un seul format (ex: ENEMY-01)
+  * ENEMY-2 / ENEMY-02 -> choisir un seul format (ex: ENEMY-02)
+  * ART-ENV-1 / ART-ENV-01 -> choisir un seul format (ex: ART-ENV-01)
+- Eviter les doublons de code:
+  * ART-CHAR apparait deux fois avec des extended codes differents.
+    -> Renommer pour rendre chaque story unique (ex: ART-CHAR-01, ART-CHAR-02)
+
+2) Corriger fautes et grammaire (Story Description)
+- "designe and development of the softbody" -> "design and development of the soft body"
+- "camer" -> "camera"
+- "attack (tap/hold), and damage system" -> "attack (tap/hold) and damage system"
+- "TestEnvironment" -> "Test Environment"
+- "advance enemy" -> "advanced enemy"
+- "Healthy, Cry, Critical states" -> harmoniser (ex: "Health, Cry, Critical states")
+- "Moving platforms, collapsing ground, lava hazards" -> OK (pas de faute)
+- "Water Resource System" description coupee -> completer la phrase
+
+3) Harmoniser les noms (Story Friendly Name)
+- Choisir un style unique (ex: Title Case):
+  * HeadsUpDisplay -> Heads-Up Display
+  * MainMenu -> Main Menu
+  * FollowSystem -> Follow System
+  * InputSystem -> Input System
+  * FireBasic / FireAdvanced -> Fire Basic / Fire Advanced
+  * LevelOne / LevelTwo -> Level One / Level Two
+
+4) Clarifier le perimetre entre stories proches
+- CAM vs CAM-CORE: preciser la difference (ex: CAM = systeme general, CAM-CORE = suivi personnage)
+- UI vs UI-HUD vs UI-MENU: preciser ce qui appartient a chaque story
+- CHAR / CHAR-CORE / CHAR-SB / CHAR-COMBAT / CHAR-STATE: definir les limites entre ces features
+
+5) Option: ajouter champ "Status" dans le fichier stories
+- Si possible, ajouter un champ simple (To Do / In Progress / Done) pour lier l’avancement (96%)
+  aux stories ouvertes restantes.
+
+---
+Si tu me donnes la liste officielle des stories en CSV/Excel,
+je peux appliquer ces corrections directement et te rendre un fichier propre.
+
+6) Modifications proposees pour les Sprints (jusqu’au Sprint 4)
+Contexte (tableau "Statistics per Sprint"):
+- Les sprints 2, 3 et 4 affichent #DIV/0! pour "% Open Tasks" car Total Nb of Tasks = 0.
+- Le Sprint 1 affiche 42,86% de taches ouvertes (3/7).
+
+Actions recommandees (sans inventer de chiffres):
+- Corriger la formule de "% Open Tasks" pour eviter #DIV/0! quand Total Nb of Tasks = 0.
+  -> regle proposee: si Total Nb of Tasks = 0, afficher 0% (ou N/A).
+- Sprint 1:
+  * Conserver 7 taches, 3 ouvertes = 42,86% (rouge car >20%).
+  * Verifier que la "Remaining Workload" (0,46 h) correspond bien aux 3 taches ouvertes.
+- Sprints 2 a 4:
+  * Total Nb of Tasks = 0, Nb of Open Tasks = 0, Remaining Workload = 0.
+  * Appliquer la regle ci-dessus pour afficher 0% (ou N/A) au lieu de #DIV/0!.
+  * Option: ajouter un commentaire "Aucune tache planifiee" pour clarifier.

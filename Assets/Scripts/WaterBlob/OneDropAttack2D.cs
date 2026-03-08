@@ -42,6 +42,9 @@ namespace WaterBlob
         [Header("Enemy Touch")]
         [Tooltip("Enemy layers that can hurt the player on contact and vaporize on touch.")]
         [SerializeField] private LayerMask touchEnemyLayers = 0;
+        [Tooltip("Obstacle layers that deal full damage on touch (instant evaporation/death).")]
+        [SerializeField] private LayerMask touchFullDamageLayers = 0;
+        [SerializeField] private bool fullDamageIgnoresInvulnerability = true;
         [SerializeField, Min(1)] private int maxHealth = 3;
         [SerializeField, Min(0f)] private float touchInvulnerabilityTime = 0.75f;
         [Tooltip("Optional prefab for damage feedback on player touch hit.")]
@@ -82,6 +85,10 @@ namespace WaterBlob
                 return;
             }
 
+            if (TryHandleFullDamageTouch(collision.gameObject))
+            {
+                return;
+            }
             TryHandleEnemyTouch(collision.gameObject, collision.rigidbody);
         }
 
@@ -92,6 +99,10 @@ namespace WaterBlob
                 return;
             }
 
+            if (TryHandleFullDamageTouch(other.gameObject))
+            {
+                return;
+            }
             TryHandleEnemyTouch(other.gameObject, other.attachedRigidbody);
         }
 
@@ -330,6 +341,35 @@ namespace WaterBlob
             return (mask.value & (1 << layer)) != 0;
         }
 
+        private bool TryHandleFullDamageTouch(GameObject touchedObject)
+        {
+            if (touchedObject == null)
+            {
+                return false;
+            }
+
+            if (!IsLayerInMask(touchedObject.layer, touchFullDamageLayers))
+            {
+                return false;
+            }
+
+            if (!fullDamageIgnoresInvulnerability && touchInvulnerabilityTimer > 0f)
+            {
+                return true;
+            }
+
+            touchInvulnerabilityTimer = touchInvulnerabilityTime;
+            SpawnPlayerDamageEffect(transform.position);
+
+            if (waterResource != null)
+            {
+                waterResource.DepleteAllWater();
+            }
+
+            currentHealth = 0;
+            return true;
+        }
+
         private void TryHandleEnemyTouch(GameObject touchedObject, Rigidbody2D touchedBody)
         {
             if (touchInvulnerabilityTimer > 0f || touchedObject == null)
@@ -377,6 +417,13 @@ namespace WaterBlob
             {
                 waterResource = GetComponentInParent<OneDropWaterResource2D>();
             }
+        }
+
+        public void ResetAfterRespawn()
+        {
+            currentHealth = Mathf.Max(1, maxHealth);
+            cooldownTimer = 0f;
+            touchInvulnerabilityTimer = 0f;
         }
 
         private void SpawnEnemyTouchVaporization(Vector3 position)
