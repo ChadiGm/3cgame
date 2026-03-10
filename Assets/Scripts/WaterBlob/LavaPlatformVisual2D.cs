@@ -56,6 +56,16 @@ namespace WaterBlob
             {
                 EnsureLavaDrips();
             }
+
+            // AUTO-SETUP HAZARD: Ensure this platform actually hurts the player
+            if (Application.isPlaying)
+            {
+                if (GetComponent<HazardImpact>() == null)
+                {
+                    gameObject.AddComponent<HazardImpact>();
+                    Debug.Log($"[LavaPlatform] Auto-attached HazardImpact to {name}. Watch out!", this);
+                }
+            }
         }
 
         private void OnEnable()

@@ -1,18 +1,19 @@
 using UnityEngine;
-#if ENABLE_INPUT_SYSTEM
-using UnityEngine.InputSystem;
-#endif
 
 namespace WaterBlob
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody2D))]
     [RequireComponent(typeof(BoxCollider2D))]
+    [RequireComponent(typeof(WaterBlobInput2D))]
     [RequireComponent(typeof(OneDropWaterResource2D))]
     public class OneDropController2D : MonoBehaviour
     {
+#region Fields
         [Header("References")]
-        [SerializeField] private Transform visualRoot;
+        [SerializeField] private WaterBlobInput2D inputSource;
+        [SerializeField] private OneDropDeformation2D deformation;
+        [SerializeField] private WaterBlobCharacter2D blobCharacter;
 
         [Header("Movement")]
         [SerializeField, Min(0f)] private float moveSpeed = 7f;
@@ -22,20 +23,25 @@ namespace WaterBlob
         [SerializeField, Min(0f)] private float postJumpGroundIgnoreTime = 0.08f;
         [SerializeField, Min(0f)] private float minJumpInterval = 0.22f;
 
+        [Header("Scaling")]
+        [Tooltip("Minimum speed multiplier when water is empty.")]
+        [SerializeField, Range(0.1f, 1f)] private float minAgilityScale = 0.65f;
+
         [Header("Physics Tuning")]
         [SerializeField] private bool overrideRigidbodyDamping = true;
         [SerializeField, Min(0f)] private float linearDamping = 0f;
         [SerializeField, Min(0f)] private float angularDamping = 0.05f;
 
         [Header("Slide Dash")]
-        [SerializeField, Min(0f)] private float doubleTapWindow = 0.25f;
         [SerializeField, Min(0f)] private float slideSpeed = 14f;
         [SerializeField, Min(0f)] private float slideDuration = 0.18f;
         [SerializeField, Min(0f)] private float slideCooldown = 0.25f;
 
         [Header("Climbing")]
-        [SerializeField, Min(0f)] private float climbSpeed = 4.8f;
-        [SerializeField, Min(0f)] private float climbAcceleration = 55f;
+        [SerializeField, Min(0f)] private float climbSpeed = 7.5f;
+        [SerializeField, Min(0f)] private float climbAcceleration = 70f;
+        [SerializeField] private Vector2 climbEntryBoost = new(0f, 8.5f);
+        [SerializeField] private Vector2 climbConstantFlow = new(0f, 3.5f);
         [SerializeField, Min(0f)] private float climbMinAccelFromSpeed = 4f;
         [SerializeField, Min(0f)] private float wallJumpHorizontalForce = 9.5f;
         [SerializeField, Min(0f)] private float wallJumpVerticalForce = 11f;
@@ -45,50 +51,29 @@ namespace WaterBlob
         [SerializeField] private bool allowWallJumpWhileClimbing = false;
         [Tooltip("Allow leaving the wall by pressing the direction away from the wall.")]
         [SerializeField] private bool allowDetachByPressingAway = true;
+        [SerializeField, Min(0f)] private float climbPushForce = 4.0f;
 
         [Header("Detection")]
         [SerializeField] private LayerMask groundMask;
         [SerializeField] private LayerMask wallMask;
         [SerializeField, Min(0.01f)] private float groundCheckDistance = 0.12f;
         [SerializeField, Min(0.01f)] private float wallCheckDistance = 0.12f;
-        [SerializeField, Range(0.05f, 0.5f)] private float groundProbeHeightFactor = 0.22f;
-        [SerializeField, Range(0.5f, 1f)] private float castWidthFactor = 0.95f;
-        [SerializeField, Range(0.5f, 1f)] private float castHeightFactor = 0.95f;
 
         [Header("Rotation")]
         [SerializeField, Min(0f)] private float rotationLerpSpeed = 12f;
         [SerializeField, Range(0f, 90f)] private float maxGroundAngle = 35f;
 
+
         [Header("Edge Stick Prevention")]
         [SerializeField, Range(0f, 1f)] private float sideNormalMinX = 0.72f;
         [SerializeField, Range(0f, 1f)] private float sideNormalMaxY = 0.45f;
 
-        [Header("Soft Body Visual")]
-        [SerializeField, Min(0f)] private float deformLerpSpeed = 14f;
-        [SerializeField, Min(0f)] private float idleGroundSquash = 0.08f;
-        [SerializeField, Min(0f)] private float idleGroundSpread = 0.06f;
-        [SerializeField, Min(0f)] private float runSquash = 0.12f;
-        [SerializeField, Min(0f)] private float accelerationStretch = 0.1f;
-        [SerializeField, Min(0f)] private float decelerationSquash = 0.12f;
-        [SerializeField, Min(0f)] private float jumpStretch = 0.2f;
-        [SerializeField, Min(0f)] private float fallStretch = 0.16f;
-        [SerializeField, Min(0f)] private float jumpPreCompress = 0.16f;
-        [SerializeField, Min(0f)] private float landingSquash = 0.22f;
-        [SerializeField, Min(0f)] private float landingMinImpactSpeed = 6f;
-        [SerializeField, Min(0f)] private float peakStretch = 0.08f;
-        [SerializeField, Min(0f)] private float slopeAdaptiveSquash = 0.08f;
-        [SerializeField, Min(0f)] private float wallAdhesionFlatten = 0.12f;
-        [SerializeField, Min(0f)] private float wallAdhesionStretch = 0.1f;
-        [SerializeField, Min(0f)] private float wallDetachStretch = 0.12f;
-        [SerializeField, Min(0f)] private float visualMomentumOffset = 0.09f;
+        [Header("Soft Body Visual (Deprecated - logic moved to OneDropDeformation2D)")]
+        [SerializeField, HideInInspector] private float landingMinImpactSpeed = 6f;
 
-        [Header("Anti Crush")]
-        [Tooltip("Extra layers to test for low ceilings. If empty, uses Ground + Wall masks.")]
+        [Header("Anti Crush (Deprecated - logic moved to OneDropDeformation2D)")]
         [SerializeField] private LayerMask ceilingMask = 0;
         [SerializeField, Min(0.01f)] private float ceilingCheckDistance = 0.14f;
-        [SerializeField, Range(0.3f, 1f)] private float minVisualHeightScale = 0.82f;
-        [SerializeField, Range(0f, 1f)] private float ceilingCompressionDampen = 0.25f;
-        [SerializeField, Range(0f, 1f)] private float ceilingSpreadDampen = 0.55f;
 
         private Rigidbody2D rb;
         private BoxCollider2D box;
@@ -106,28 +91,89 @@ namespace WaterBlob
         private bool groundedLastStep;
         private float previousVelY;
         private Vector2 previousVelocity;
-        private float accelerationSignal;
         private float slideTimer;
         private float slideCooldownTimer;
         private float postJumpGroundIgnoreTimer;
         private float jumpIntervalTimer;
-        private float lastLeftTapTime = -99f;
-        private float lastRightTapTime = -99f;
-        private float landingPulse;
-        private float jumpPulse;
-        private float wallDetachPulse;
-        private int wallDetachDirection;
         private bool cancelHorizontalForEdgeStick;
-        private Vector3 baseVisualScale;
-        private Vector3 baseVisualLocalPosition;
-        private bool visualRootIsSelf;
         private bool touchingWallThisStep;
         private int touchingWallDirection;
         private bool touchingCeilingThisStep;
         private float ceilingCompression01;
         private Vector2 currentGroundNormal = Vector2.up;
         private OneDropWaterResource2D waterResource;
-        private WaterBlobCharacter2D blobCharacter;
+
+        public enum SoftBodyReactionMode
+        {
+            Free,
+            SlideSync,
+            ClimbSync,
+        }
+
+        public readonly struct DeformationState
+        {
+            public DeformationState(
+                Vector2 velocity,
+                Vector2 previousVelocity,
+                float inputX,
+                float facingSign,
+                bool isGrounded,
+                bool isClimbing,
+                bool isSliding,
+                bool touchingWall,
+                int touchingWallDirection,
+                bool touchingCeiling,
+                float ceilingCompression01,
+                Vector2 groundNormal,
+                float maxGroundAngle,
+                int climbWallDirection,
+                float acceleration,
+                float moveSpeed,
+                float jumpForce,
+                Vector2 softBodySyncVelocity,
+                SoftBodyReactionMode softBodyMode)
+            {
+                Velocity = velocity;
+                PreviousVelocity = previousVelocity;
+                InputX = inputX;
+                FacingSign = facingSign;
+                IsGrounded = isGrounded;
+                IsClimbing = isClimbing;
+                IsSliding = isSliding;
+                TouchingWall = touchingWall;
+                TouchingWallDirection = touchingWallDirection;
+                TouchingCeiling = touchingCeiling;
+                CeilingCompression01 = ceilingCompression01;
+                GroundNormal = groundNormal;
+                MaxGroundAngle = maxGroundAngle;
+                ClimbWallDirection = climbWallDirection;
+                Acceleration = acceleration;
+                MoveSpeed = moveSpeed;
+                JumpForce = jumpForce;
+                SoftBodySyncVelocity = softBodySyncVelocity;
+                SoftBodyMode = softBodyMode;
+            }
+
+            public Vector2 Velocity { get; }
+            public Vector2 PreviousVelocity { get; }
+            public float InputX { get; }
+            public float FacingSign { get; }
+            public bool IsGrounded { get; }
+            public bool IsClimbing { get; }
+            public bool IsSliding { get; }
+            public bool TouchingWall { get; }
+            public int TouchingWallDirection { get; }
+            public bool TouchingCeiling { get; }
+            public float CeilingCompression01 { get; }
+            public Vector2 GroundNormal { get; }
+            public float MaxGroundAngle { get; }
+            public int ClimbWallDirection { get; }
+            public float Acceleration { get; }
+            public float MoveSpeed { get; }
+            public float JumpForce { get; }
+            public Vector2 SoftBodySyncVelocity { get; }
+            public SoftBodyReactionMode SoftBodyMode { get; }
+        }
 
         private void Awake()
         {
@@ -138,18 +184,43 @@ namespace WaterBlob
             {
                 waterResource = gameObject.AddComponent<OneDropWaterResource2D>();
             }
-            blobCharacter = GetComponent<WaterBlobCharacter2D>();
-            if (visualRoot == null)
+
+            BindReferences();
+            if (inputSource == null)
             {
-                visualRoot = transform;
+                Debug.LogError("[OneDropController2D] Missing required WaterBlobInput2D reference.", this);
+                enabled = false;
+                return;
             }
 
             facingSign = transform.localScale.x >= 0f ? 1f : -1f;
-            baseVisualScale = visualRoot.localScale;
-            baseVisualLocalPosition = visualRoot.localPosition;
-            visualRootIsSelf = visualRoot == transform;
         }
 
+        private void OnValidate()
+        {
+            BindReferences();
+        }
+
+        private void BindReferences()
+        {
+            if (inputSource == null)
+            {
+                inputSource = GetComponent<WaterBlobInput2D>();
+            }
+
+            if (deformation == null)
+            {
+                deformation = GetComponent<OneDropDeformation2D>();
+            }
+
+            if (blobCharacter == null)
+            {
+                blobCharacter = GetComponent<WaterBlobCharacter2D>();
+            }
+        }
+#endregion
+
+#region Input
         private void Start()
         {
             rb.gravityScale = gravityWhenNotClimbing;
@@ -195,6 +266,11 @@ namespace WaterBlob
             bool touchingClimbWall = touchingWall && IsWallClimbable(wallHit);
             UpdateClimbState(touchingClimbWall, wallDirection);
 
+            if (!groundedLastStep && grounded && -previousVelY >= landingMinImpactSpeed)
+            {
+                deformation?.NotifyLanding(-previousVelY);
+            }
+
             if (isClimbing)
             {
                 ApplyClimbMovement();
@@ -234,12 +310,11 @@ namespace WaterBlob
             if (waterResource != null)
             {
                 bool isMoving = Mathf.Abs(inputX) > 0.1f || isSliding || isClimbing;
-                waterResource.ConsumeMove(Time.fixedDeltaTime, isMoving);
+                waterResource.ConsumeMove(dt, isMoving);
             }
 
             ApplyRotation(groundHit);
-            ApplyVisualFlip();
-            ApplySoftBodyDeformation();
+            deformation?.ApplyControllerState(BuildDeformationState(), dt);
 
             jumpPressed = false;
             groundedLastStep = grounded;
@@ -272,51 +347,24 @@ namespace WaterBlob
 
         private void ReadInput()
         {
-            float x = 0f;
-            float y = 0f;
-            bool jumpDown = false;
-            bool leftTapDown = false;
-            bool rightTapDown = false;
-
-#if ENABLE_INPUT_SYSTEM
-            Keyboard keyboard = Keyboard.current;
-            if (keyboard != null)
+            if (inputSource == null)
             {
-                bool leftPressed = keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed;
-                bool rightPressed = keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed;
-                if (leftPressed) x -= 1f;
-                if (rightPressed) x += 1f;
-                if (keyboard.wKey.isPressed || keyboard.zKey.isPressed || keyboard.upArrowKey.isPressed) y += 1f;
-                if (keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed) y -= 1f;
-                jumpDown |= keyboard.spaceKey.wasPressedThisFrame;
-                leftTapDown |= keyboard.aKey.wasPressedThisFrame || keyboard.leftArrowKey.wasPressedThisFrame;
-                rightTapDown |= keyboard.dKey.wasPressedThisFrame || keyboard.rightArrowKey.wasPressedThisFrame;
+                inputX = 0f;
+                inputY = 0f;
+                jumpPressed = false;
+                return;
             }
 
-            Gamepad gamepad = Gamepad.current;
-            if (gamepad != null)
-            {
-                Vector2 stick = gamepad.leftStick.ReadValue();
-                if (Mathf.Abs(stick.x) > Mathf.Abs(x)) x = stick.x;
-                if (Mathf.Abs(stick.y) > Mathf.Abs(y)) y = stick.y;
-                jumpDown |= gamepad.buttonSouth.wasPressedThisFrame;
-            }
-#else
-            x = Input.GetAxisRaw("Horizontal");
-            y = Input.GetAxisRaw("Vertical");
-            jumpDown = Input.GetButtonDown("Jump");
-            leftTapDown = Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow);
-            rightTapDown = Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow);
-#endif
+            Vector2 move = inputSource.Move;
+            inputX = Mathf.Clamp(move.x, -1f, 1f);
+            inputY = Mathf.Clamp(move.y, -1f, 1f);
 
-            inputX = Mathf.Clamp(x, -1f, 1f);
-            inputY = Mathf.Clamp(y, -1f, 1f);
-            if (jumpDown)
+            if (inputSource.ConsumeJumpPressed())
             {
                 jumpPressed = true;
             }
 
-            ProcessDoubleTapSlide(leftTapDown, rightTapDown);
+            ProcessSlideInput(inputSource.ConsumeSlidePressed());
         }
 
         private void UpdateClimbState(bool touchingWall, int wallDirection)
@@ -335,14 +383,16 @@ namespace WaterBlob
                     isSliding = false;
                     climbWallDirection = wallDirection == 0 ? (int)Mathf.Sign(facingSign) : wallDirection;
                     rb.gravityScale = 0f;
-                    rb.linearVelocity = Vector2.zero;
-                    SetBlobCharacterEnabled(false);
+
+                    Vector2 boost = new(climbWallDirection * 0.2f, climbEntryBoost.y);
+                    rb.linearVelocity = new Vector2(0f, Mathf.Max(rb.linearVelocity.y, 0f));
+                    rb.AddForce(boost, ForceMode2D.Impulse);
+                    Debug.Log($"[OneDropController] Climbing started. Kinetic Boost: {boost}");
                 }
 
                 return;
             }
 
-            // Detach if player presses direction away from wall
             bool hasVerticalIntent = Mathf.Abs(inputY) > 0.1f;
             if (allowDetachByPressingAway && horizontalInput && !hasVerticalIntent && climbWallDirection != 0 && Mathf.Sign(inputX) != climbWallDirection)
             {
@@ -356,33 +406,17 @@ namespace WaterBlob
             }
         }
 
-        private void ProcessDoubleTapSlide(bool leftTapDown, bool rightTapDown)
+        private void ProcessSlideInput(bool shiftDown)
         {
             if (isClimbing || isSliding || slideCooldownTimer > 0f)
             {
-                if (leftTapDown) lastLeftTapTime = Time.time;
-                if (rightTapDown) lastRightTapTime = Time.time;
                 return;
             }
 
-            if (leftTapDown)
+            if (shiftDown)
             {
-                if (Time.time - lastLeftTapTime <= doubleTapWindow)
-                {
-                    StartSlide(-1);
-                }
-
-                lastLeftTapTime = Time.time;
-            }
-
-            if (rightTapDown)
-            {
-                if (Time.time - lastRightTapTime <= doubleTapWindow)
-                {
-                    StartSlide(1);
-                }
-
-                lastRightTapTime = Time.time;
+                int dir = Mathf.Abs(inputX) > 0.1f ? (int)Mathf.Sign(inputX) : (int)Mathf.Sign(facingSign);
+                StartSlide(dir);
             }
         }
 
@@ -398,6 +432,7 @@ namespace WaterBlob
             slideTimer = slideDuration;
             slideCooldownTimer = slideCooldown;
             facingSign = direction;
+
             if (waterResource != null)
             {
                 waterResource.ConsumeSlide();
@@ -407,8 +442,9 @@ namespace WaterBlob
         private void ApplyHorizontalMovement()
         {
             rb.gravityScale = gravityWhenNotClimbing;
-            float targetX = inputX * moveSpeed;
-            float effectiveAcceleration = Mathf.Max(acceleration, moveSpeed * minAccelerationFromSpeed);
+            float agility = GetAgilityScale();
+            float targetX = inputX * moveSpeed * agility;
+            float effectiveAcceleration = Mathf.Max(acceleration, moveSpeed * minAccelerationFromSpeed) * agility;
             float nextX = Mathf.MoveTowards(rb.linearVelocity.x, targetX, effectiveAcceleration * Time.fixedDeltaTime);
             rb.linearVelocity = new Vector2(nextX, rb.linearVelocity.y);
 
@@ -422,7 +458,7 @@ namespace WaterBlob
         {
             rb.gravityScale = gravityWhenNotClimbing;
             Vector2 v = rb.linearVelocity;
-            v.x = slideDirection * slideSpeed;
+            v.x = slideDirection * slideSpeed * GetAgilityScale();
             rb.linearVelocity = v;
         }
 
@@ -430,28 +466,13 @@ namespace WaterBlob
         {
             rb.gravityScale = 0f;
 
-            // Acceleration-based vertical movement, mirroring ground horizontal movement
-            float targetY = inputY * climbSpeed;
-            float effAccel = Mathf.Max(climbAcceleration, climbSpeed * climbMinAccelFromSpeed);
+            float agility = GetAgilityScale();
+            float targetY = (inputY * climbSpeed * agility) + (climbConstantFlow.y * agility);
+            float effAccel = Mathf.Max(climbAcceleration, climbSpeed * climbMinAccelFromSpeed) * agility;
             float nextY = Mathf.MoveTowards(rb.linearVelocity.y, targetY, effAccel * Time.fixedDeltaTime);
-            rb.linearVelocity = new Vector2(0f, nextY);
+            float nextX = climbConstantFlow.x * agility;
 
-            if (blobCharacter != null && blobCharacter.PointBodies != null)
-            {
-                for (int i = 0; i < blobCharacter.PointBodies.Count; i++)
-                {
-                    Rigidbody2D pointBody = blobCharacter.PointBodies[i];
-                    if (pointBody == null)
-                    {
-                        continue;
-                    }
-
-                    Vector2 pv = pointBody.linearVelocity;
-                    pv.x = 0f;
-                    pv.y = nextY;
-                    pointBody.linearVelocity = pv;
-                }
-            }
+            rb.linearVelocity = new Vector2(nextX, nextY);
 
             if (inputY < -0.05f)
             {
@@ -465,7 +486,9 @@ namespace WaterBlob
 
         private void DoGroundJump()
         {
-            jumpPulse = 1f;
+            float scaledJump = jumpForce * GetAgilityScale();
+            EventBus.Publish(new AudioTriggerEvent(AudioEventType.Jump));
+            deformation?.NotifyJump(Vector2.up * (scaledJump * 0.2f));
             jumpIntervalTimer = minJumpInterval;
             postJumpGroundIgnoreTimer = postJumpGroundIgnoreTime;
 
@@ -473,7 +496,8 @@ namespace WaterBlob
             v.y = 0f;
             rb.linearVelocity = v;
 
-            rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+            rb.AddForce(Vector2.up * scaledJump, ForceMode2D.Impulse);
+
             if (waterResource != null)
             {
                 waterResource.ConsumeJump();
@@ -484,8 +508,11 @@ namespace WaterBlob
         {
             int away = -climbWallDirection;
             StopClimbing();
-            wallDetachPulse = 1f;
-            wallDetachDirection = away;
+            float agility = GetAgilityScale();
+            Vector2 jumpImp = new(away * wallJumpHorizontalForce, wallJumpVerticalForce);
+            Vector2 scaledJumpImpulse = jumpImp * agility;
+            EventBus.Publish(new AudioTriggerEvent(AudioEventType.Jump));
+            deformation?.NotifyWallDetach(away, scaledJumpImpulse * 0.2f);
             jumpIntervalTimer = minJumpInterval;
             postJumpGroundIgnoreTimer = postJumpGroundIgnoreTime;
 
@@ -493,7 +520,8 @@ namespace WaterBlob
             v.y = 0f;
             rb.linearVelocity = v;
 
-            rb.AddForce(new Vector2(away * wallJumpHorizontalForce, wallJumpVerticalForce), ForceMode2D.Impulse);
+            rb.AddForce(scaledJumpImpulse, ForceMode2D.Impulse);
+
             facingSign = away;
             if (waterResource != null)
             {
@@ -505,29 +533,7 @@ namespace WaterBlob
         {
             isClimbing = false;
             climbWallDirection = 0;
-            // Restore gravity — use blob's value if present, otherwise our own
-            rb.gravityScale = (blobCharacter != null) ? blobCharacter.gravityScale : gravityWhenNotClimbing;
-            SetBlobCharacterEnabled(true);
-        }
-
-        private void SetBlobCharacterEnabled(bool enabled)
-        {
-            if (blobCharacter == null) return;
-
-            blobCharacter.enabled = enabled;
-
-            // Also manage point body gravity so the blob shape follows the core during climbing
-            if (blobCharacter.PointBodies != null)
-            {
-                float g = enabled ? blobCharacter.gravityScale : 0f;
-                for (int i = 0; i < blobCharacter.PointBodies.Count; i++)
-                {
-                    if (blobCharacter.PointBodies[i] != null)
-                    {
-                        blobCharacter.PointBodies[i].gravityScale = g;
-                    }
-                }
-            }
+            rb.gravityScale = gravityWhenNotClimbing;
         }
 
         private void ApplyRotation(RaycastHit2D groundHit)
@@ -551,127 +557,47 @@ namespace WaterBlob
             rb.MoveRotation(next.eulerAngles.z);
         }
 
-        private void ApplyVisualFlip()
+        private DeformationState BuildDeformationState()
         {
-            Vector3 scale = transform.localScale;
-            float absX = Mathf.Max(0.0001f, Mathf.Abs(scale.x));
-            scale.x = absX * (facingSign >= 0f ? 1f : -1f);
-            transform.localScale = scale;
-        }
-
-        private void ApplySoftBodyDeformation()
-        {
-            if (!groundedLastStep && grounded && -previousVelY >= landingMinImpactSpeed)
-            {
-                float impact = Mathf.Clamp01((-previousVelY - landingMinImpactSpeed) / Mathf.Max(0.01f, landingMinImpactSpeed));
-                landingPulse = Mathf.Clamp01(0.55f + impact);
-            }
-
-            landingPulse = Mathf.MoveTowards(landingPulse, 0f, 3.2f * Time.fixedDeltaTime);
-            jumpPulse = Mathf.MoveTowards(jumpPulse, 0f, 7f * Time.fixedDeltaTime);
-            wallDetachPulse = Mathf.MoveTowards(wallDetachPulse, 0f, 6f * Time.fixedDeltaTime);
-
             Vector2 velocity = rb.linearVelocity;
-            float dt = Mathf.Max(0.0001f, Time.fixedDeltaTime);
-            accelerationSignal = Mathf.MoveTowards(accelerationSignal, (velocity.x - previousVelocity.x) / dt, acceleration * 2.8f * dt);
+            SoftBodyReactionMode softBodyMode = SoftBodyReactionMode.Free;
 
-            float speed01 = Mathf.Clamp01(Mathf.Abs(velocity.x) / Mathf.Max(0.01f, moveSpeed));
-            float rise01 = Mathf.Clamp01(velocity.y / Mathf.Max(0.01f, jumpForce));
-            float fall01 = Mathf.Clamp01(-velocity.y / Mathf.Max(0.01f, jumpForce));
-            float accel01 = Mathf.Clamp01(Mathf.Abs(accelerationSignal) / Mathf.Max(0.01f, acceleration * 2f));
-            bool accelerating = Mathf.Abs(inputX) > 0.05f && Mathf.Sign(inputX) == Mathf.Sign(velocity.x) && Mathf.Abs(velocity.x) > 0.08f;
-            bool decelerating = Mathf.Abs(velocity.x) > 0.08f && (Mathf.Abs(inputX) < 0.05f || Mathf.Sign(inputX) != Mathf.Sign(velocity.x));
-            float peak01 = (!grounded && !isClimbing) ? 1f - Mathf.Clamp01(Mathf.Abs(velocity.y) / 1.4f) : 0f;
-            float slope01 = grounded && !isClimbing ? Mathf.Clamp01(Mathf.Abs(Vector2.SignedAngle(Vector2.up, currentGroundNormal)) / Mathf.Max(1f, maxGroundAngle)) : 0f;
-            float wall01 = (isClimbing || touchingWallThisStep) ? 1f : 0f;
-            float idle01 = grounded && Mathf.Abs(velocity.x) < 0.08f && !isClimbing ? 1f : 0f;
-
-            float horizontalSpread = 0f;
-            float verticalCompress = 0f;
-            float verticalStretch = 0f;
-
-            horizontalSpread += idleGroundSpread * idle01;
-            verticalCompress += idleGroundSquash * idle01;
-
-            horizontalSpread += runSquash * speed01;
-            verticalCompress += runSquash * speed01 * 0.58f;
-
-            if (accelerating)
+            if (isClimbing)
             {
-                horizontalSpread += accelerationStretch * accel01;
+                softBodyMode = SoftBodyReactionMode.ClimbSync;
+            }
+            else if (isSliding)
+            {
+                softBodyMode = SoftBodyReactionMode.SlideSync;
             }
 
-            if (decelerating)
-            {
-                verticalCompress += decelerationSquash * accel01;
-            }
-
-            verticalStretch += jumpStretch * rise01;
-            verticalStretch += fallStretch * fall01;
-            verticalStretch += peakStretch * peak01;
-
-            horizontalSpread += jumpPreCompress * jumpPulse;
-            verticalCompress += jumpPreCompress * jumpPulse;
-
-            horizontalSpread += landingSquash * landingPulse;
-            verticalCompress += landingSquash * landingPulse * 0.95f;
-
-            horizontalSpread += slopeAdaptiveSquash * slope01;
-            verticalCompress += slopeAdaptiveSquash * slope01 * 0.6f;
-
-            horizontalSpread += wallAdhesionFlatten * wall01;
-            verticalStretch += wallAdhesionStretch * wall01;
-
-            horizontalSpread += wallDetachStretch * wallDetachPulse;
-            verticalStretch += wallDetachStretch * wallDetachPulse * 0.32f;
-
-            if (touchingCeilingThisStep)
-            {
-                float damp = Mathf.Lerp(1f, ceilingCompressionDampen, ceilingCompression01);
-                verticalCompress *= damp;
-                horizontalSpread *= Mathf.Lerp(1f, ceilingSpreadDampen, ceilingCompression01);
-            }
-
-            float targetXAbs = baseVisualScale.x * (1f + horizontalSpread - verticalStretch * 0.35f);
-            float targetY = baseVisualScale.y * (1f - verticalCompress + verticalStretch);
-            targetY = Mathf.Max(baseVisualScale.y * minVisualHeightScale, targetY);
-            float targetSign = visualRootIsSelf ? Mathf.Sign(facingSign) : Mathf.Sign(baseVisualScale.x);
-            if (targetSign == 0f)
-            {
-                targetSign = 1f;
-            }
-
-            Vector3 targetScale = new(Mathf.Max(0.08f, targetXAbs) * targetSign, Mathf.Max(0.08f, targetY), baseVisualScale.z);
-
-            Vector3 targetPos = baseVisualLocalPosition;
-            if (!visualRootIsSelf)
-            {
-                float momentumSign = Mathf.Abs(velocity.x) > 0.1f ? Mathf.Sign(velocity.x) : Mathf.Sign(facingSign);
-                float momentumOffset = visualMomentumOffset * speed01;
-                float accelOffset = visualMomentumOffset * 0.7f * Mathf.Clamp(accelerationSignal / Mathf.Max(0.01f, acceleration * 2f), -1f, 1f);
-                float wallOffset = wall01 > 0f ? 0.04f * Mathf.Sign(touchingWallDirection == 0 ? climbWallDirection : touchingWallDirection) : 0f;
-                float detachOffset = 0.06f * wallDetachPulse * wallDetachDirection;
-                float groundSink = (idleGroundSquash * idle01 + landingSquash * landingPulse * 0.5f) * 0.2f;
-
-                targetPos.x += momentumOffset * momentumSign + accelOffset + wallOffset - detachOffset;
-                targetPos.y -= groundSink;
-            }
-
-            visualRoot.localScale = Vector3.Lerp(visualRoot.localScale, targetScale, deformLerpSpeed * Time.fixedDeltaTime);
-            if (!visualRootIsSelf)
-            {
-                visualRoot.localPosition = Vector3.Lerp(visualRoot.localPosition, targetPos, deformLerpSpeed * Time.fixedDeltaTime);
-            }
+            return new DeformationState(
+                velocity,
+                previousVelocity,
+                inputX,
+                facingSign,
+                grounded,
+                isClimbing,
+                isSliding,
+                touchingWallThisStep,
+                touchingWallDirection,
+                touchingCeilingThisStep,
+                ceilingCompression01,
+                currentGroundNormal,
+                maxGroundAngle,
+                climbWallDirection,
+                acceleration,
+                moveSpeed,
+                jumpForce,
+                velocity,
+                softBodyMode);
         }
 
         private bool CheckGround(out RaycastHit2D hit)
         {
-            Bounds b = box.bounds;
-            float probeHeight = Mathf.Max(0.05f, b.size.y * groundProbeHeightFactor);
-            Vector2 size = new Vector2(b.size.x * castWidthFactor, probeHeight);
-            Vector2 origin = b.center;
-            origin.y = b.min.y + probeHeight * 0.5f + 0.005f;
-            hit = Physics2D.BoxCast(origin, size, 0f, Vector2.down, groundCheckDistance, groundMask);
+            Vector2 origin = (Vector2)transform.position;
+            float radius = (blobCharacter != null) ? blobCharacter.movementRadius : 0.45f;
+            hit = Physics2D.CircleCast(origin, radius, Vector2.down, groundCheckDistance, groundMask);
             return hit.collider != null;
         }
 
@@ -688,18 +614,15 @@ namespace WaterBlob
 
         private bool CheckWall(out RaycastHit2D hit, out int wallDirection)
         {
-            Vector2 size = GetCastSize();
             int preferredDir = isClimbing ? climbWallDirection : (facingSign >= 0f ? 1 : -1);
             LayerMask detectionMask = GetWallDetectionMask();
-            Vector2 castOrigin = box.bounds.center;
-
-            Vector2 leftDir = Vector2.left;
-            Vector2 rightDir = Vector2.right;
+            Vector2 castOrigin = (Vector2)transform.position;
 
             bool TrySide(int dir, out RaycastHit2D sideHit)
             {
-                Vector2 castDir = dir > 0 ? rightDir : leftDir;
-                sideHit = Physics2D.BoxCast(castOrigin, size, 0f, castDir, wallCheckDistance, detectionMask);
+                Vector2 castDir = dir > 0 ? Vector2.right : Vector2.left;
+                float radius = (blobCharacter != null) ? blobCharacter.movementRadius : 0.45f;
+                sideHit = Physics2D.CircleCast(castOrigin, radius, castDir, wallCheckDistance, detectionMask);
                 return sideHit.collider != null;
             }
 
@@ -751,16 +674,23 @@ namespace WaterBlob
             return (mask.value & (1 << layer)) != 0;
         }
 
+        private float GetAgilityScale()
+        {
+            if (waterResource == null)
+            {
+                return 1f;
+            }
+
+            return Mathf.Lerp(minAgilityScale, 1f, waterResource.NormalizedAmount);
+        }
+
         private bool CheckCeiling(out RaycastHit2D hit, out float compression01)
         {
-            Bounds b = box.bounds;
-            float probeHeight = Mathf.Max(0.05f, b.size.y * groundProbeHeightFactor);
-            Vector2 size = new Vector2(b.size.x * castWidthFactor, probeHeight);
-            Vector2 origin = b.center;
-            origin.y = b.max.y - probeHeight * 0.5f - 0.005f;
-
+            Vector2 origin = (Vector2)transform.position;
             LayerMask mask = ceilingMask.value == 0 ? (groundMask | wallMask) : ceilingMask;
-            hit = Physics2D.BoxCast(origin, size, 0f, Vector2.up, ceilingCheckDistance, mask);
+            float radius = (blobCharacter != null) ? blobCharacter.movementRadius : 0.45f;
+            hit = Physics2D.CircleCast(origin, radius, Vector2.up, ceilingCheckDistance, mask);
+
             if (hit.collider == null)
             {
                 compression01 = 0f;
@@ -771,11 +701,6 @@ namespace WaterBlob
             return true;
         }
 
-        private Vector2 GetCastSize()
-        {
-            Bounds b = box.bounds;
-            return new Vector2(b.size.x * castWidthFactor, b.size.y * castHeightFactor);
-        }
 
         private void CreateAndApplyZeroFrictionMaterial()
         {
@@ -788,6 +713,6 @@ namespace WaterBlob
             box.sharedMaterial = runtimeMaterial;
             rb.sharedMaterial = runtimeMaterial;
         }
-
+#endregion
     }
 }

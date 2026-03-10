@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class bullet : MonoBehaviour
 {
-    [Tooltip("Compatibility script: attack/ignore layers are controlled only by OneDropAttack2D.")]
+    [Tooltip("Visual helper for projectile eyes.")]
     [SerializeField] private bool showEyes = true;
     [SerializeField, Min(0.01f)] private float eyeSize = 0.06f;
     [SerializeField] private float eyeSpacing = 0.08f;

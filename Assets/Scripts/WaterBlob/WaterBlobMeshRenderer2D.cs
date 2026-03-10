@@ -18,11 +18,16 @@ namespace WaterBlob
         [Range(0f, 0.8f)] public float smoothing = 0.28f;
         public int sortingOrder = 10;
 
+        [Header("Damage Feedback")]
+        public Color damageColor = new(1f, 0.4f, 0.4f, 0.8f);
+        [Min(0f)] public float flashFrequency = 12f;
+
         private Mesh mesh;
         private MeshFilter meshFilter;
         private MeshRenderer meshRenderer;
         private LineRenderer lineRenderer;
         private Material fillMaterial;
+        private OneDropWaterResource2D waterResource;
 
         private readonly List<Vector3> worldPoints = new();
         private readonly List<Vector3> displayPoints = new();
@@ -36,6 +41,11 @@ namespace WaterBlob
             if (blob == null)
             {
                 blob = GetComponent<WaterBlobCharacter2D>();
+            }
+
+            if (waterResource == null)
+            {
+                waterResource = GetComponentInParent<OneDropWaterResource2D>();
             }
 
             if (mesh == null)
@@ -65,6 +75,28 @@ namespace WaterBlob
             BuildPointBuffers(points);
             DrawFillMesh();
             DrawOutline();
+            UpdateVisualFeedback();
+        }
+
+        private void UpdateVisualFeedback()
+        {
+            if (waterResource == null || fillMaterial == null) return;
+
+            Color targetFill = fillColor;
+            Color targetEdge = edgeColor;
+
+            if (waterResource.IsInvulnerable)
+            {
+                float pulse = 0.5f + Mathf.Sin(Time.time * flashFrequency) * 0.5f;
+                targetFill = Color.Lerp(fillColor, damageColor, pulse);
+                targetEdge = Color.Lerp(edgeColor, Color.white, pulse);
+            }
+
+            if (fillMaterial.HasProperty("_Color")) fillMaterial.SetColor("_Color", targetFill);
+            if (fillMaterial.HasProperty("_BaseColor")) fillMaterial.SetColor("_BaseColor", targetFill);
+
+            lineRenderer.startColor = targetEdge;
+            lineRenderer.endColor = targetEdge;
         }
 
         private void BuildPointBuffers(IReadOnlyList<Rigidbody2D> points)
