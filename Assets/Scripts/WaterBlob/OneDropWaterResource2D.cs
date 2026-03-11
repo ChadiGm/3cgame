@@ -30,7 +30,8 @@ namespace WaterBlob
         [SerializeField, Min(0f)] private float disableDelay = 0.15f;
         [SerializeField] private bool respawnOnDeath = true;
         [SerializeField, Min(0f)] private float respawnDelay = 1.2f;
-        [SerializeField] private Transform spawnPoint;
+        [SerializeField] private bool useCheckpointManager = true;
+        [SerializeField] private CheckpointManager2D checkpointManager;
 
         private float currentWater;
         private bool dead;
@@ -53,6 +54,15 @@ namespace WaterBlob
             currentWater = maxWater;
             initialSpawnPosition = transform.position;
             initialSpawnRotation = transform.rotation;
+            if (useCheckpointManager)
+            {
+                if (checkpointManager == null)
+                {
+                    checkpointManager = CheckpointManager2D.EnsureInstance();
+                }
+
+                checkpointManager.RegisterPlayer(transform);
+            }
             EnsureUI();
             RefreshUI();
         }
@@ -177,9 +187,14 @@ namespace WaterBlob
 
         private void RespawnPlayer(OneDropController2D controller, OneDropAttack2D attack)
         {
-            Vector3 respawnPosition = spawnPoint != null ? spawnPoint.position : initialSpawnPosition;
-            Quaternion respawnRotation = spawnPoint != null ? spawnPoint.rotation : initialSpawnRotation;
+            Vector3 respawnPosition = initialSpawnPosition;
+            Quaternion respawnRotation = initialSpawnRotation;
 
+            if (useCheckpointManager && checkpointManager != null && checkpointManager.TryGetRespawn(out Vector3 cpPos, out Quaternion cpRot))
+            {
+                respawnPosition = cpPos;
+                respawnRotation = cpRot;
+            }
             transform.SetPositionAndRotation(respawnPosition, respawnRotation);
 
             if (rb != null)
@@ -205,6 +220,7 @@ namespace WaterBlob
             if (blobCharacter != null)
             {
                 blobCharacter.enabled = true;
+                blobCharacter.RebuildBlob();
                 if (blobCharacter.PointBodies != null)
                 {
                     for (int i = 0; i < blobCharacter.PointBodies.Count; i++)
