@@ -10,6 +10,7 @@ namespace WaterBlob
     public class WaterBlobMeshRenderer2D : MonoBehaviour
     {
         [SerializeField] private WaterBlobCharacter2D blob;
+        [SerializeField] private OneDropWaterResource2D waterResource;
 
         [Header("Visual")]
         public Color fillColor = new(0.19f, 0.72f, 1f, 0.5f);
@@ -17,6 +18,10 @@ namespace WaterBlob
         [Min(0.005f)] public float edgeWidth = 0.12f;
         [Range(0f, 0.8f)] public float smoothing = 0.28f;
         public int sortingOrder = 10;
+
+        [Header("Water Fill")]
+        public bool useWaterResourceFill = true;
+        [Range(0f, 1f)] public float manualFill = 1f;
 
         private Mesh mesh;
         private MeshFilter meshFilter;
@@ -26,6 +31,7 @@ namespace WaterBlob
 
         private readonly List<Vector3> worldPoints = new();
         private readonly List<Vector3> displayPoints = new();
+        private readonly List<Vector3> clippedPoints = new();
 
         private void Awake()
         {
@@ -36,6 +42,11 @@ namespace WaterBlob
             if (blob == null)
             {
                 blob = GetComponent<WaterBlobCharacter2D>();
+            }
+
+            if (waterResource == null)
+            {
+                waterResource = GetComponent<OneDropWaterResource2D>();
             }
 
             if (mesh == null)
@@ -63,7 +74,12 @@ namespace WaterBlob
             }
 
             BuildPointBuffers(points);
-            DrawFillMesh();
+            float fill = manualFill;
+            if (useWaterResourceFill && waterResource != null)
+            {
+                fill = waterResource.WaterRatio;
+            }
+            DrawFillMesh(fill);
             DrawOutline();
         }
 
@@ -96,19 +112,48 @@ namespace WaterBlob
             }
         }
 
-        private void DrawFillMesh()
+        private void DrawFillMesh(float fillAmount)
         {
             if (displayPoints.Count < 3)
             {
                 return;
             }
 
-            int n = displayPoints.Count;
+            fillAmount = Mathf.Clamp01(fillAmount);
+            if (fillAmount <= 0.001f)
+            {
+                mesh.Clear();
+                return;
+            }
+
+            IReadOnlyList<Vector3> source = displayPoints;
+            if (fillAmount < 0.999f)
+            {
+                float minY = displayPoints[0].y;
+                float maxY = displayPoints[0].y;
+                for (int i = 1; i < displayPoints.Count; i++)
+                {
+                    float y = displayPoints[i].y;
+                    if (y < minY) minY = y;
+                    if (y > maxY) maxY = y;
+                }
+
+                float fillY = Mathf.Lerp(minY, maxY, fillAmount);
+                ClipPolygonByHorizontalLine(displayPoints, fillY, clippedPoints);
+                if (clippedPoints.Count < 3)
+                {
+                    mesh.Clear();
+                    return;
+                }
+                source = clippedPoints;
+            }
+
+            int n = source.Count;
             Vector3 center = Vector3.zero;
 
             for (int i = 0; i < n; i++)
             {
-                center += displayPoints[i];
+                center += source[i];
             }
 
             center /= n;
@@ -122,7 +167,7 @@ namespace WaterBlob
 
             for (int i = 0; i < n; i++)
             {
-                Vector3 local = transform.InverseTransformPoint(displayPoints[i]);
+                Vector3 local = transform.InverseTransformPoint(source[i]);
                 vertices[i + 1] = local;
                 uv[i + 1] = new Vector2(local.x + 0.5f, local.y + 0.5f);
 
@@ -138,6 +183,51 @@ namespace WaterBlob
             mesh.triangles = triangles;
             mesh.RecalculateBounds();
             mesh.RecalculateNormals();
+        }
+
+        private static void ClipPolygonByHorizontalLine(IReadOnlyList<Vector3> input, float fillY, List<Vector3> output)
+        {
+            output.Clear();
+            if (input.Count == 0)
+            {
+                return;
+            }
+
+            Vector3 prev = input[input.Count - 1];
+            bool prevInside = prev.y <= fillY;
+
+            for (int i = 0; i < input.Count; i++)
+            {
+                Vector3 curr = input[i];
+                bool currInside = curr.y <= fillY;
+
+                if (currInside)
+                {
+                    if (!prevInside)
+                    {
+                        output.Add(IntersectAtY(prev, curr, fillY));
+                    }
+                    output.Add(curr);
+                }
+                else if (prevInside)
+                {
+                    output.Add(IntersectAtY(prev, curr, fillY));
+                }
+
+                prev = curr;
+                prevInside = currInside;
+            }
+        }
+
+        private static Vector3 IntersectAtY(Vector3 a, Vector3 b, float y)
+        {
+            float dy = b.y - a.y;
+            if (Mathf.Abs(dy) < 0.0001f)
+            {
+                return a;
+            }
+            float t = (y - a.y) / dy;
+            return Vector3.Lerp(a, b, t);
         }
 
         private void DrawOutline()
@@ -203,6 +293,16 @@ private static Shader FindBestShader()
 
         private void OnValidate()
         {
+            if (blob == null)
+            {
+                blob = GetComponent<WaterBlobCharacter2D>();
+            }
+
+            if (waterResource == null)
+            {
+                waterResource = GetComponent<OneDropWaterResource2D>();
+            }
+
             if (meshRenderer != null)
             {
                 meshRenderer.sortingOrder = sortingOrder;

@@ -45,3 +45,13 @@ ONE DROP - Version 0.5 (Water Resource + Death HUD Pass - 2026-02-25)
 - Movement integration update: jump and slide actions consume configured water amounts.
 - Death rule implemented: when water reaches 0, OneDrop evaporates and player control/combat are disabled.
 - Death feedback added: vapor effect on player evaporation with optional prefab override.
+
+ONE DROP - Version 0.6 (Storm Enemy + Water Fill Pass - 2026-03-12)
+
+- New storm enemy created with its own sprites, animations, and controller (separate from the existing enemy).
+- Storm animation states added: Idle (frames 01/02/03/09/10) and Angry (frames 04/05/06/07/08).
+- Storm behavior added: becomes Angry when the player is within range.
+- Storm art updated with user-provided transparent frames.
+- Water HUD removed; water level now fills inside the character instead of using a UI gauge.
+- Water fill integration added to `WaterBlobMeshRenderer2D` (clip fill mesh based on `WaterRatio`).
+- New `WaterRatio` accessor added to `OneDropWaterResource2D` for visuals.

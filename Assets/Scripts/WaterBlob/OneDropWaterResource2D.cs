@@ -1,6 +1,5 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace WaterBlob
 {
@@ -17,14 +16,6 @@ namespace WaterBlob
         [SerializeField, Min(0f)] private float shootDrain = 6f;
         [SerializeField, Min(0f)] private float damageDrain = 20f;
 
-        [Header("UI")]
-        [SerializeField, Min(0f)] private float topOffset = 24f;
-        [SerializeField] private Vector2 gaugeSize = new Vector2(90f, 90f);
-        [SerializeField] private Color backgroundColor = new Color(1f, 1f, 1f, 0.12f);
-        [SerializeField] private Color waterColor = new Color(0.22f, 0.86f, 1f, 0.85f);
-        [SerializeField] private Color frameColor = new Color(0.9f, 0.98f, 1f, 0.8f);
-        [SerializeField, Range(0.02f, 0.4f)] private float frameThickness = 0.1f;
-
         [Header("Death")]
         [SerializeField] private GameObject deathVaporEffectPrefab;
         [SerializeField, Min(0f)] private float disableDelay = 0.15f;
@@ -40,8 +31,8 @@ namespace WaterBlob
         private Vector3 initialSpawnPosition;
         private Quaternion initialSpawnRotation;
 
-        private Image waterFillImage;
-        private RectTransform gaugeRoot;
+        public float WaterRatio => Mathf.Clamp01(currentWater / Mathf.Max(0.0001f, maxWater));
+
 
         private void Awake()
         {
@@ -64,8 +55,6 @@ namespace WaterBlob
 
                 checkpointManager.RegisterPlayer(transform);
             }
-            EnsureUI();
-            RefreshUI();
         }
 
         public bool ConsumeShoot()
@@ -96,7 +85,6 @@ namespace WaterBlob
             }
 
             currentWater = 0f;
-            RefreshUI();
             StartCoroutine(HandleDeath());
         }
 
@@ -123,7 +111,6 @@ namespace WaterBlob
             }
 
             currentWater = Mathf.Max(0f, currentWater - amount);
-            RefreshUI();
 
             if (currentWater <= 0f)
             {
@@ -256,7 +243,6 @@ namespace WaterBlob
 
             currentWater = maxWater;
             dead = false;
-            RefreshUI();
         }
 
         private void SpawnDeathVapor(Vector3 position)
@@ -295,160 +281,6 @@ namespace WaterBlob
 
             ps.Play();
             Destroy(fx, 1.4f);
-        }
-
-        private void EnsureUI()
-        {
-            const string canvasName = "OneDropWaterUI_Canvas";
-            const string rootName = "WaterGaugeRoot";
-
-            GameObject canvasGo = GameObject.Find(canvasName);
-            Canvas canvas;
-            if (canvasGo == null)
-            {
-                canvasGo = new GameObject(canvasName);
-                canvas = canvasGo.AddComponent<Canvas>();
-                canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-                CanvasScaler scaler = canvasGo.AddComponent<CanvasScaler>();
-                scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-                scaler.referenceResolution = new Vector2(1920f, 1080f);
-                scaler.matchWidthOrHeight = 0.5f;
-                canvasGo.AddComponent<GraphicRaycaster>();
-            }
-            else
-            {
-                canvas = canvasGo.GetComponent<Canvas>();
-                if (canvas == null)
-                {
-                    canvas = canvasGo.AddComponent<Canvas>();
-                    canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-                }
-            }
-
-            Transform root = canvas.transform.Find(rootName);
-            if (root == null)
-            {
-                GameObject rootGo = new GameObject(rootName);
-                rootGo.transform.SetParent(canvas.transform, false);
-                gaugeRoot = rootGo.AddComponent<RectTransform>();
-                gaugeRoot.anchorMin = new Vector2(0.5f, 1f);
-                gaugeRoot.anchorMax = new Vector2(0.5f, 1f);
-                gaugeRoot.pivot = new Vector2(0.5f, 1f);
-                gaugeRoot.anchoredPosition = new Vector2(0f, -topOffset);
-                gaugeRoot.sizeDelta = gaugeSize;
-
-                Sprite circle = CreateCircleSprite(128);
-                Sprite ring = CreateRingSprite(128, frameThickness);
-
-                GameObject bgGo = CreateImageChild("GaugeBackground", gaugeRoot, circle, backgroundColor);
-                bgGo.GetComponent<RectTransform>().sizeDelta = gaugeSize;
-
-                GameObject fillGo = CreateImageChild("GaugeFill", gaugeRoot, circle, waterColor);
-                RectTransform fillRt = fillGo.GetComponent<RectTransform>();
-                fillRt.sizeDelta = gaugeSize * 0.9f;
-                Image fillImage = fillGo.GetComponent<Image>();
-                fillImage.type = Image.Type.Filled;
-                fillImage.fillMethod = Image.FillMethod.Vertical;
-                fillImage.fillOrigin = (int)Image.OriginVertical.Bottom;
-                fillImage.fillAmount = 1f;
-                waterFillImage = fillImage;
-
-                GameObject frameGo = CreateImageChild("GaugeFrame", gaugeRoot, ring, frameColor);
-                RectTransform frameRt = frameGo.GetComponent<RectTransform>();
-                frameRt.sizeDelta = gaugeSize;
-            }
-            else
-            {
-                gaugeRoot = root as RectTransform;
-                waterFillImage = root.Find("GaugeFill")?.GetComponent<Image>();
-                gaugeRoot.anchorMin = new Vector2(0.5f, 1f);
-                gaugeRoot.anchorMax = new Vector2(0.5f, 1f);
-                gaugeRoot.pivot = new Vector2(0.5f, 1f);
-                gaugeRoot.anchoredPosition = new Vector2(0f, -topOffset);
-            }
-        }
-
-        private void RefreshUI()
-        {
-            if (waterFillImage == null)
-            {
-                return;
-            }
-
-            float ratio = Mathf.Clamp01(currentWater / Mathf.Max(0.0001f, maxWater));
-            waterFillImage.fillAmount = ratio;
-            Color c = waterColor;
-            c.a = Mathf.Lerp(0.2f, waterColor.a, ratio);
-            waterFillImage.color = c;
-        }
-
-        private static GameObject CreateImageChild(string name, Transform parent, Sprite sprite, Color color)
-        {
-            GameObject go = new GameObject(name);
-            go.transform.SetParent(parent, false);
-            RectTransform rt = go.AddComponent<RectTransform>();
-            rt.anchorMin = new Vector2(0.5f, 0.5f);
-            rt.anchorMax = new Vector2(0.5f, 0.5f);
-            rt.pivot = new Vector2(0.5f, 0.5f);
-            Image img = go.AddComponent<Image>();
-            img.sprite = sprite;
-            img.color = color;
-            return go;
-        }
-
-        private static Sprite CreateCircleSprite(int resolution)
-        {
-            int size = Mathf.Max(16, resolution);
-            Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
-            tex.filterMode = FilterMode.Bilinear;
-            tex.wrapMode = TextureWrapMode.Clamp;
-            float center = size * 0.5f;
-            float radius = center - 1f;
-            float radiusSq = radius * radius;
-
-            for (int y = 0; y < size; y++)
-            {
-                for (int x = 0; x < size; x++)
-                {
-                    float dx = x - center + 0.5f;
-                    float dy = y - center + 0.5f;
-                    float distSq = dx * dx + dy * dy;
-                    tex.SetPixel(x, y, distSq <= radiusSq ? Color.white : Color.clear);
-                }
-            }
-
-            tex.Apply();
-            return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
-        }
-
-        private static Sprite CreateRingSprite(int resolution, float thickness01)
-        {
-            int size = Mathf.Max(16, resolution);
-            float normalizedThickness = Mathf.Clamp(thickness01, 0.02f, 0.4f);
-            Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
-            tex.filterMode = FilterMode.Bilinear;
-            tex.wrapMode = TextureWrapMode.Clamp;
-
-            float center = size * 0.5f;
-            float outerRadius = center - 1f;
-            float innerRadius = outerRadius * (1f - normalizedThickness);
-            float outerSq = outerRadius * outerRadius;
-            float innerSq = innerRadius * innerRadius;
-
-            for (int y = 0; y < size; y++)
-            {
-                for (int x = 0; x < size; x++)
-                {
-                    float dx = x - center + 0.5f;
-                    float dy = y - center + 0.5f;
-                    float distSq = dx * dx + dy * dy;
-                    bool isRingPixel = distSq <= outerSq && distSq >= innerSq;
-                    tex.SetPixel(x, y, isRingPixel ? Color.white : Color.clear);
-                }
-            }
-
-            tex.Apply();
-            return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
         }
     }
 }
