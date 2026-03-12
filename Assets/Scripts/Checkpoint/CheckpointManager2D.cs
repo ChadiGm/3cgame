@@ -10,6 +10,7 @@ namespace WaterBlob
         [Header("Defaults")]
         [SerializeField] private Transform defaultSpawnPoint;
         [SerializeField] private bool usePlayerStartIfNoDefault = true;
+        [SerializeField] private bool debugLogs = false;
 
         private Vector3 initialSpawnPosition;
         private Quaternion initialSpawnRotation;
@@ -93,6 +94,10 @@ namespace WaterBlob
             lastCheckpointPosition = checkpoint.position;
             lastCheckpointRotation = checkpoint.rotation;
             hasCheckpoint = true;
+            if (debugLogs)
+            {
+                Debug.Log($"[CheckpointManager2D] Activated checkpoint '{checkpoint.name}' at {lastCheckpointPosition}", checkpoint);
+            }
         }
 
         public bool TryGetRespawn(out Vector3 position, out Quaternion rotation)
@@ -101,6 +106,10 @@ namespace WaterBlob
             {
                 position = lastCheckpointPosition;
                 rotation = lastCheckpointRotation;
+                if (debugLogs)
+                {
+                    Debug.Log($"[CheckpointManager2D] Respawn using checkpoint at {position}");
+                }
                 return true;
             }
 
@@ -108,6 +117,10 @@ namespace WaterBlob
             {
                 position = initialSpawnPosition;
                 rotation = initialSpawnRotation;
+                if (debugLogs)
+                {
+                    Debug.Log($"[CheckpointManager2D] Respawn using initial spawn at {position}");
+                }
                 return true;
             }
 

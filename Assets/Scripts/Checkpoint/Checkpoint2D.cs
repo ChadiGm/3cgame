@@ -7,8 +7,10 @@ namespace WaterBlob
     public class Checkpoint2D : MonoBehaviour
     {
         [SerializeField] private bool isDefaultSpawn = false;
+        [SerializeField] private bool forceTrigger = true;
         [SerializeField] private bool activateOnce = true;
         [SerializeField] private bool requirePlayerController = true;
+        [SerializeField] private string playerTag = "Player";
 
         private bool activated;
         private bool registeredDefault;
@@ -21,11 +23,13 @@ namespace WaterBlob
         private void OnEnable()
         {
             TryRegisterDefault();
+            EnsureTrigger();
         }
 
         private void Start()
         {
             TryRegisterDefault();
+            EnsureTrigger();
         }
 
         private void Reset()
@@ -45,6 +49,36 @@ namespace WaterBlob
         private void OnTriggerStay2D(Collider2D other)
         {
             TryActivate(other);
+        }
+
+        private void OnCollisionEnter2D(Collision2D collision)
+        {
+            if (collision != null)
+            {
+                TryActivate(collision.collider);
+            }
+        }
+
+        private void OnCollisionStay2D(Collision2D collision)
+        {
+            if (collision != null)
+            {
+                TryActivate(collision.collider);
+            }
+        }
+
+        private void EnsureTrigger()
+        {
+            if (!forceTrigger)
+            {
+                return;
+            }
+
+            Collider2D col = GetComponent<Collider2D>();
+            if (col != null)
+            {
+                col.isTrigger = true;
+            }
         }
 
         private void TryRegisterDefault()
@@ -92,6 +126,11 @@ namespace WaterBlob
             if (other == null)
             {
                 return false;
+            }
+
+            if (!string.IsNullOrEmpty(playerTag) && other.CompareTag(playerTag))
+            {
+                return true;
             }
 
             if (requirePlayerController)

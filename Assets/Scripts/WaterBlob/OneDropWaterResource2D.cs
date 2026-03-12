@@ -32,6 +32,7 @@ namespace WaterBlob
         [SerializeField, Min(0f)] private float respawnDelay = 1.2f;
         [SerializeField] private bool useCheckpointManager = true;
         [SerializeField] private CheckpointManager2D checkpointManager;
+        [SerializeField] private bool debugRespawnLogs = false;
 
         private float currentWater;
         private bool dead;
@@ -194,6 +195,10 @@ namespace WaterBlob
             {
                 respawnPosition = cpPos;
                 respawnRotation = cpRot;
+            }
+            if (debugRespawnLogs)
+            {
+                Debug.Log($"[OneDropWaterResource2D] Respawn at {respawnPosition}", this);
             }
             transform.SetPositionAndRotation(respawnPosition, respawnRotation);
 
