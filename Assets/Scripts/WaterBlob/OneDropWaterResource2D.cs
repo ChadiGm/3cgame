@@ -1,201 +1,286 @@
+using System.Collections;
 using UnityEngine;
 
 namespace WaterBlob
 {
-    /// <summary>
-    /// Simple container for the player's "water" resource used by the 2D character.
-    /// The class exists mainly to satisfy dependencies in <see cref="OneDropController2D"/>
-    /// and <see cref="PlayerCombatController"/>. Current implementation is minimal and
-    /// can be expanded later when balance values are available.
-    /// </summary>
     [DisallowMultipleComponent]
-    public class OneDropWaterResource2D : MonoBehaviour, IWaterReceiver
+    [RequireComponent(typeof(Rigidbody2D))]
+    public class OneDropWaterResource2D : MonoBehaviour
     {
-        [Header("Resource Settings")]
-        [Min(0f)] public float maxAmount = 100f;
-        [Min(0f)] public float shootCost = 5f;
-        [Min(0f)] public float chargeShootCost = 15f;
-        [Min(0f)] public float damageCost = 15f;
-        [Min(0f)] public float moveCostPerSecond = 1.5f;
-        [Min(0f)] public float slideCost = 10f;
-        [Min(0f)] public float jumpCost = 8f;
+        [Header("Water Resource")]
+        [SerializeField, Min(1f)] private float maxWater = 100f;
+        [SerializeField, Min(0f)] private float moveDrainPerSecond = 3.5f;
+        [SerializeField, Min(0f)] private float moveSpeedThreshold = 0.2f;
+        [SerializeField, Min(0f)] private float jumpDrain = 10f;
+        [SerializeField, Min(0f)] private float slideDrain = 12f;
+        [SerializeField, Min(0f)] private float shootDrain = 6f;
+        [SerializeField, Min(0f)] private float damageDrain = 20f;
 
-        [Header("Survival")]
-        [SerializeField, Min(0f)] private float invulnerabilityTime = 0.8f;
+        [Header("Death")]
+        [SerializeField] private GameObject deathVaporEffectPrefab;
+        [SerializeField, Min(0f)] private float disableDelay = 0.15f;
+        [SerializeField] private bool respawnOnDeath = true;
+        [SerializeField, Min(0f)] private float respawnDelay = 1.2f;
+        [SerializeField] private bool useCheckpointManager = true;
+        [SerializeField] private CheckpointManager2D checkpointManager;
+        [SerializeField] private bool debugRespawnLogs = false;
 
-        // Events
-        public event System.Action<float, float> OnWaterChanged; // (current, max)
-        public event System.Action OnDied;
-        public event System.Action OnTakeDamage;
+        private float currentWater;
+        private bool dead;
+        private Rigidbody2D rb;
+        private Vector3 initialSpawnPosition;
+        private Quaternion initialSpawnRotation;
 
-        private float currentAmount;
-        private float invulnerabilityTimer;
+        public float WaterRatio => Mathf.Clamp01(currentWater / Mathf.Max(0.0001f, maxWater));
 
-        public float Current => currentAmount;
-        public float Max => maxAmount;
-        public float NormalizedAmount => Mathf.Clamp01(currentAmount / Mathf.Max(0.01f, maxAmount));
-        public bool IsInvulnerable => invulnerabilityTimer > 0f;
-        public bool IsFull => currentAmount >= maxAmount - 0.001f;
 
         private void Awake()
         {
-            currentAmount = maxAmount;
-        }
-
-        private void OnEnable()
-        {
-            EventBus.Publish(new PlayerResourceCreated { Resource = this });
-        }
-
-        private void OnDisable()
-        {
-            EventBus.Publish(new PlayerResourceRemoved { Resource = this });
-        }
-
-
-
-        private void Update()
-        {
-            if (invulnerabilityTimer > 0f)
+            rb = GetComponent<Rigidbody2D>();
+            maxWater = Mathf.Max(1f, maxWater);
+            moveDrainPerSecond = Mathf.Max(0f, moveDrainPerSecond);
+            jumpDrain = Mathf.Max(0f, jumpDrain);
+            slideDrain = Mathf.Max(0f, slideDrain);
+            shootDrain = Mathf.Max(0f, shootDrain);
+            damageDrain = Mathf.Max(0f, damageDrain);
+            currentWater = maxWater;
+            initialSpawnPosition = transform.position;
+            initialSpawnRotation = transform.rotation;
+            if (useCheckpointManager)
             {
-                invulnerabilityTimer -= Time.deltaTime;
+                if (checkpointManager == null)
+                {
+                    checkpointManager = CheckpointManager2D.EnsureInstance();
+                }
+
+                checkpointManager.RegisterPlayer(transform);
             }
-        }
-
-        public void TakeWaterDamage(float amount, bool bypassInvulnerability = false)
-        {
-            TakeDamage(amount, bypassInvulnerability);
-        }
-
-        public bool ReceiveWater(float amount)
-        {
-            return TryRefill(amount);
-        }
-
-        /// <summary>
-        /// Unified damage method. Includes invulnerability frames by default.
-        /// </summary>
-        public void TakeDamage(float amount, bool ignoreInvulnerability = false)
-        {
-            if (amount <= 0 || currentAmount <= 0) return;
-            if (!ignoreInvulnerability && IsInvulnerable) return;
-
-            if (!ignoreInvulnerability)
-            {
-                invulnerabilityTimer = invulnerabilityTime;
-            }
-            
-            currentAmount = Mathf.Max(0f, currentAmount - amount);
-            
-            if (!ignoreInvulnerability) 
-            {
-                EventBus.Publish(new AudioTriggerEvent(AudioEventType.Damage));
-            }
-
-            OnTakeDamage?.Invoke();
-            NotifyChange(ignoreInvulnerability ? "Hazard Damage" : "Taken Damage");
-
-            if (currentAmount <= 0.001f)
-            {
-                EventBus.Publish(new AudioTriggerEvent(AudioEventType.Death));
-                OnDied?.Invoke();
-            }
-        }
-
-        /// <summary>
-        /// Legacy support for existing scripts, now calls TakeDamage with default value.
-        /// </summary>
-        public void ConsumeDamage()
-        {
-            TakeDamage(damageCost);
         }
 
         public bool ConsumeShoot()
         {
-            if (currentAmount >= shootCost)
-            {
-                currentAmount -= shootCost;
-                NotifyChange("Shot Fired");
-                return true;
-            }
-            return false;
-        }
-
-        public bool ConsumeChargeShoot()
-        {
-            if (currentAmount >= chargeShootCost)
-            {
-                currentAmount -= chargeShootCost;
-                NotifyChange("Charged Shot Fired");
-                return true;
-            }
-            return false;
-        }
-
-        public void ConsumeMove(float deltaTime, bool isMoving)
-        {
-            if (!isMoving || deltaTime <= 0f) return;
-            float prevAmount = currentAmount;
-            currentAmount = Mathf.Max(0f, currentAmount - moveCostPerSecond * deltaTime);
-            
-            if (!Mathf.Approximately(prevAmount, currentAmount))
-            {
-                NotifyChange("Moving");
-            }
-        }
-
-        public void ConsumeSlide()
-        {
-            currentAmount = Mathf.Max(0f, currentAmount - slideCost);
-            NotifyChange("Sliding");
+            return Consume(shootDrain);
         }
 
         public void ConsumeJump()
         {
-            currentAmount = Mathf.Max(0f, currentAmount - jumpCost);
-            NotifyChange("Jumping");
+            Consume(jumpDrain);
         }
 
-        public bool TryRefill(float amount = -1f)
+        public void ConsumeSlide()
         {
-            float previousAmount = currentAmount;
-            if (amount < 0f)
-            {
-                currentAmount = maxAmount;
-            }
-            else
-            {
-                if (amount <= 0f)
-                {
-                    return false;
-                }
+            Consume(slideDrain);
+        }
 
-                currentAmount = Mathf.Min(maxAmount, currentAmount + amount);
+        public void ConsumeDamage()
+        {
+            Consume(damageDrain);
+        }
+
+        public void DepleteAllWater()
+        {
+            if (dead)
+            {
+                return;
             }
 
-            if (Mathf.Approximately(previousAmount, currentAmount))
+            currentWater = 0f;
+            StartCoroutine(HandleDeath());
+        }
+
+        public void ConsumeMove(float deltaTime, bool isMoving)
+        {
+            if (!isMoving || deltaTime <= 0f)
             {
+                return;
+            }
+
+            if (rb != null && Mathf.Abs(rb.linearVelocity.x) < moveSpeedThreshold && Mathf.Abs(rb.linearVelocity.y) < moveSpeedThreshold)
+            {
+                return;
+            }
+
+            Consume(moveDrainPerSecond * deltaTime);
+        }
+
+        private bool Consume(float amount)
+        {
+            if (dead || amount <= 0f)
+            {
+                return !dead;
+            }
+
+            currentWater = Mathf.Max(0f, currentWater - amount);
+
+            if (currentWater <= 0f)
+            {
+                StartCoroutine(HandleDeath());
                 return false;
             }
 
-            NotifyChange("Refilled");
             return true;
         }
 
-        public void Refill(float amount = -1f)
+        private IEnumerator HandleDeath()
         {
-            TryRefill(amount);
+            if (dead)
+            {
+                yield break;
+            }
+
+            dead = true;
+            SpawnDeathVapor(transform.position);
+
+            OneDropController2D controller = GetComponent<OneDropController2D>();
+            if (controller != null)
+            {
+                controller.enabled = false;
+            }
+
+            OneDropAttack2D attack = GetComponent<OneDropAttack2D>();
+            if (attack != null)
+            {
+                attack.enabled = false;
+            }
+
+            if (rb != null)
+            {
+                rb.linearVelocity = Vector2.zero;
+                rb.angularVelocity = 0f;
+                rb.simulated = false;
+            }
+
+            yield return new WaitForSeconds(disableDelay);
+
+            Collider2D[] colls = GetComponentsInChildren<Collider2D>(true);
+            for (int i = 0; i < colls.Length; i++)
+            {
+                colls[i].enabled = false;
+            }
+
+            Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                renderers[i].enabled = false;
+            }
+
+            if (!respawnOnDeath)
+            {
+                yield break;
+            }
+
+            yield return new WaitForSeconds(respawnDelay);
+            RespawnPlayer(controller, attack);
         }
 
-        private void NotifyChange(string reason)
+        private void RespawnPlayer(OneDropController2D controller, OneDropAttack2D attack)
         {
-            Debug.Log($"[WaterResource] {reason}. Current: {currentAmount:F1}/{maxAmount:F1} ({NormalizedAmount:P0})");
-            OnWaterChanged?.Invoke(currentAmount, maxAmount);
+            Vector3 respawnPosition = initialSpawnPosition;
+            Quaternion respawnRotation = initialSpawnRotation;
+
+            if (useCheckpointManager && checkpointManager != null && checkpointManager.TryGetRespawn(out Vector3 cpPos, out Quaternion cpRot))
+            {
+                respawnPosition = cpPos;
+                respawnRotation = cpRot;
+            }
+            if (debugRespawnLogs)
+            {
+                Debug.Log($"[OneDropWaterResource2D] Respawn at {respawnPosition}", this);
+            }
+            transform.SetPositionAndRotation(respawnPosition, respawnRotation);
+
+            if (rb != null)
+            {
+                rb.simulated = true;
+                rb.linearVelocity = Vector2.zero;
+                rb.angularVelocity = 0f;
+            }
+
+            Collider2D[] colls = GetComponentsInChildren<Collider2D>(true);
+            for (int i = 0; i < colls.Length; i++)
+            {
+                colls[i].enabled = true;
+            }
+
+            Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                renderers[i].enabled = true;
+            }
+
+            WaterBlobCharacter2D blobCharacter = GetComponent<WaterBlobCharacter2D>();
+            if (blobCharacter != null)
+            {
+                blobCharacter.enabled = true;
+                blobCharacter.RebuildBlob();
+                if (blobCharacter.PointBodies != null)
+                {
+                    for (int i = 0; i < blobCharacter.PointBodies.Count; i++)
+                    {
+                        Rigidbody2D pointBody = blobCharacter.PointBodies[i];
+                        if (pointBody == null)
+                        {
+                            continue;
+                        }
+
+                        pointBody.gravityScale = blobCharacter.gravityScale;
+                        pointBody.linearVelocity = Vector2.zero;
+                        pointBody.angularVelocity = 0f;
+                    }
+                }
+            }
+
+            if (controller != null)
+            {
+                controller.enabled = true;
+            }
+
+            if (attack != null)
+            {
+                attack.ResetAfterRespawn();
+                attack.enabled = true;
+            }
+
+            currentWater = maxWater;
+            dead = false;
         }
 
-        public void SetInvulnerable(float time)
+        private void SpawnDeathVapor(Vector3 position)
         {
-            invulnerabilityTimer = Mathf.Max(invulnerabilityTimer, time);
+            if (deathVaporEffectPrefab != null)
+            {
+                Instantiate(deathVaporEffectPrefab, position, Quaternion.identity);
+                return;
+            }
+
+            GameObject fx = new GameObject("OneDropDeathVapor_Runtime");
+            fx.transform.position = position;
+            ParticleSystem ps = fx.AddComponent<ParticleSystem>();
+            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
+            var main = ps.main;
+            main.playOnAwake = false;
+            main.duration = 0.5f;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.18f, 0.45f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(1.2f, 3.8f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.08f, 0.18f);
+            main.startColor = new ParticleSystem.MinMaxGradient(
+                new Color(0.8f, 0.95f, 1f, 0.95f),
+                new Color(0.55f, 0.85f, 1f, 0.65f)
+            );
+            main.maxParticles = 140;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+
+            var emission = ps.emission;
+            emission.rateOverTime = 0f;
+            emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 64) });
+
+            var shape = ps.shape;
+            shape.shapeType = ParticleSystemShapeType.Sphere;
+            shape.radius = 0.28f;
+
+            ps.Play();
+            Destroy(fx, 1.4f);
         }
     }
 }
