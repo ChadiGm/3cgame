@@ -144,7 +144,7 @@ namespace WaterBlob
 
             if (targetResource != null)
             {
-                ApplyFillImmediate(targetResource.NormalizedAmount);
+                ApplyFillImmediate(targetResource.WaterRatio);
             }
         }
 
@@ -176,12 +176,12 @@ namespace WaterBlob
 
             UnbindEvents();
             targetResource = resource;
-            targetResource.OnWaterChanged += HandleWaterChanged;
+            targetResource.OnWaterRatioChanged += HandleWaterChanged;
             targetResource.OnTakeDamage += HandleTakeDamage;
             isBound = true;
             loggedMissingResource = false;
 
-            ApplyFillImmediate(targetResource.NormalizedAmount);
+            ApplyFillImmediate(targetResource.WaterRatio);
             Debug.Log($"[WaterResourceUI] Bound to OneDropWaterResource2D on '{resource.gameObject.name}'.", this);
         }
 
@@ -274,14 +274,14 @@ namespace WaterBlob
         private void UnbindEvents()
         {
             if (!isBound || targetResource == null) return;
-            targetResource.OnWaterChanged -= HandleWaterChanged;
+            targetResource.OnWaterRatioChanged -= HandleWaterChanged;
             targetResource.OnTakeDamage -= HandleTakeDamage;
             isBound = false;
         }
 
-        private void HandleWaterChanged(float current, float max)
+        private void HandleWaterChanged(float ratio)
         {
-            targetFillAmount = Mathf.Clamp01(current / Mathf.Max(0.01f, max));
+            targetFillAmount = ratio;
         }
 
         private void OnDestroy()

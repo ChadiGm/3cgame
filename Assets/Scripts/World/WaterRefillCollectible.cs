@@ -66,7 +66,7 @@ namespace WaterBlob
                 return;
             }
 
-            bool changed = water.ReceiveWater(fullRefill ? -1f : refillAmount);
+            bool changed = water.ReceiveWater(fullRefill ? water.Max : refillAmount);
             if (!changed)
             {
                 return;

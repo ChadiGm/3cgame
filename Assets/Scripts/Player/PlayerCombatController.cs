@@ -189,7 +189,8 @@ namespace WaterBlob
 
             if (bulletPrefab == null || firePoint == null) return;
 
-            if (waterResource != null && !waterResource.ConsumeChargeShoot()) return;
+            // Charged shots consume 2 water (assuming normal shot is 1, handled in ConsumeShoot())
+            if (waterResource != null && !waterResource.Consume(2f)) return;
 
             cooldownTimer = shootCooldown * 2f; // Longer cooldown for charged shot
 
@@ -385,6 +386,10 @@ namespace WaterBlob
             impactEffectPrefab = impactPrefab;
             vaporizationEffectPrefab = vaporizationPrefab;
             releaseToPool = releaseAction;
+            
+            Collider2D coll = GetComponent<Collider2D>();
+            if (coll != null) coll.isTrigger = true;
+
             initialized = true;
         }
 
@@ -420,15 +425,15 @@ namespace WaterBlob
             }
         }
 
-        private void OnCollisionEnter2D(Collision2D collision)
+        private void OnTriggerEnter2D(Collider2D collider)
         {
-            if (!initialized || collision == null || collision.gameObject == null) return;
+            if (!initialized || collider == null || collider.gameObject == null) return;
 
             HandleHit(
-                collision.gameObject.layer,
-                collision.rigidbody != null ? collision.rigidbody.gameObject : collision.gameObject,
-                collision.contactCount > 0 ? collision.GetContact(0).point : (Vector2)transform.position,
-                collision.contactCount > 0 ? collision.GetContact(0).normal : Vector2.up
+                collider.gameObject.layer,
+                collider.attachedRigidbody != null ? collider.attachedRigidbody.gameObject : collider.gameObject,
+                collider.ClosestPoint(transform.position),
+                Vector2.up
             );
         }
 
@@ -440,6 +445,7 @@ namespace WaterBlob
                 return;
             }
 
+            if (target.CompareTag("Player")) return;
             if (IsLayerInMask(otherLayer, ignoredLayers)) return;
 
             SpawnImpactEffect(contactPoint, contactNormal);

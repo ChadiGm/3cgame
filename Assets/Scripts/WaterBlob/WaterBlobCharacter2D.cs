@@ -165,6 +165,8 @@ namespace WaterBlob
                 Vector2 ringOffset = new(Mathf.Cos(angle) * radius, Mathf.Sin(angle) * radius);
 
                 GameObject point = new($"Point_{i:00}");
+                point.layer = gameObject.layer;
+                try { point.tag = gameObject.tag; } catch { /* Ignore if tag not defined */ }
                 point.transform.SetParent(pointsRoot);
                 point.transform.position = coreBody.position + ringOffset;
                 point.transform.rotation = Quaternion.identity;

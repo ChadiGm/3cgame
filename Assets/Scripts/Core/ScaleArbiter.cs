@@ -42,8 +42,8 @@ namespace Core
             if (resource != null)
             {
                 // Initial sync
-                UpdateResourceRadius(resource.Current, resource.maxAmount);
-                resource.OnWaterChanged += UpdateResourceRadius;
+                UpdateResourceRadius(resource.WaterRatio);
+                resource.OnWaterRatioChanged += UpdateResourceRadius;
             }
         }
 
@@ -51,15 +51,14 @@ namespace Core
         {
             if (resource != null)
             {
-                resource.OnWaterChanged -= UpdateResourceRadius;
+                resource.OnWaterRatioChanged -= UpdateResourceRadius;
             }
         }
 
-        private void UpdateResourceRadius(float current, float max)
+        private void UpdateResourceRadius(float ratio)
         {
-            float t = current / Mathf.Max(0.01f, max);
             // We still derive the 'standard' size from water, but now it's just one input.
-            resourceTargetRadius = Mathf.Lerp(minRadius, baseRadius, t);
+            resourceTargetRadius = Mathf.Lerp(minRadius, baseRadius, ratio);
         }
 
         private void Update()

@@ -5,7 +5,7 @@ namespace WaterBlob
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody2D))]
-    public class OneDropWaterResource2D : MonoBehaviour
+    public class OneDropWaterResource2D : MonoBehaviour, IWaterReceiver
     {
         [Header("Water Resource")]
         [SerializeField, Min(1f)] private float maxWater = 100f;
@@ -31,8 +31,38 @@ namespace WaterBlob
         private Vector3 initialSpawnPosition;
         private Quaternion initialSpawnRotation;
 
+        public event System.Action OnDied;
+        public event System.Action<float> OnWaterRatioChanged;
+        public event System.Action OnTakeDamage;
+
         public float WaterRatio => Mathf.Clamp01(currentWater / Mathf.Max(0.0001f, maxWater));
 
+        // IWaterReceiver Implementation
+        public float Current => currentWater;
+        public float Max => maxWater;
+        public float NormalizedAmount => WaterRatio;
+        public bool IsInvulnerable => false;
+
+        public bool ReceiveWater(float amount)
+        {
+            if (dead || amount <= 0f) return false;
+            float oldWater = currentWater;
+            currentWater = Mathf.Min(maxWater, currentWater + amount);
+            if (!Mathf.Approximately(currentWater, oldWater))
+            {
+                OnWaterRatioChanged?.Invoke(WaterRatio);
+                return true;
+            }
+            return false;
+        }
+
+        public void TakeWaterDamage(float amount, bool bypassInvulnerability = false)
+        {
+            if (Consume(amount))
+            {
+                OnTakeDamage?.Invoke();
+            }
+        }
 
         private void Awake()
         {
@@ -74,7 +104,10 @@ namespace WaterBlob
 
         public void ConsumeDamage()
         {
-            Consume(damageDrain);
+            if (Consume(damageDrain))
+            {
+                OnTakeDamage?.Invoke();
+            }
         }
 
         public void DepleteAllWater()
@@ -85,6 +118,7 @@ namespace WaterBlob
             }
 
             currentWater = 0f;
+            OnWaterRatioChanged?.Invoke(0f);
             StartCoroutine(HandleDeath());
         }
 
@@ -103,7 +137,7 @@ namespace WaterBlob
             Consume(moveDrainPerSecond * deltaTime);
         }
 
-        private bool Consume(float amount)
+        public bool Consume(float amount)
         {
             if (dead || amount <= 0f)
             {
@@ -111,6 +145,7 @@ namespace WaterBlob
             }
 
             currentWater = Mathf.Max(0f, currentWater - amount);
+            OnWaterRatioChanged?.Invoke(WaterRatio);
 
             if (currentWater <= 0f)
             {
@@ -129,6 +164,7 @@ namespace WaterBlob
             }
 
             dead = true;
+            OnDied?.Invoke();
             SpawnDeathVapor(transform.position);
 
             OneDropController2D controller = GetComponent<OneDropController2D>();
@@ -242,6 +278,7 @@ namespace WaterBlob
             }
 
             currentWater = maxWater;
+            OnWaterRatioChanged?.Invoke(1f);
             dead = false;
         }
 

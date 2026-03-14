@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 9167647695477022304}
   - component: {fileID: 5530533151751121864}
   - component: {fileID: 6271449204231997517}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: LiquidGradient
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -87,7 +87,7 @@ GameObject:
   - component: {fileID: 6015035705161422395}
   - component: {fileID: 6999661056586906090}
   - component: {fileID: 3963447688427796409}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: DropletMask
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -175,7 +175,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3098502857718274198}
   - component: {fileID: 3036896958166203241}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: WaterHUD
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -263,7 +263,7 @@ GameObject:
   - component: {fileID: 5730635506840820363}
   - component: {fileID: 4764827814422768304}
   - component: {fileID: 1951821730909682414}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: VesselOutline
   m_TagString: Untagged
   m_Icon: {fileID: 0}

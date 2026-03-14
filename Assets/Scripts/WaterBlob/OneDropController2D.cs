@@ -51,7 +51,6 @@ namespace WaterBlob
         [SerializeField] private bool allowWallJumpWhileClimbing = false;
         [Tooltip("Allow leaving the wall by pressing the direction away from the wall.")]
         [SerializeField] private bool allowDetachByPressingAway = true;
-        [SerializeField, Min(0f)] private float climbPushForce = 4.0f;
 
         [Header("Detection")]
         [SerializeField] private LayerMask groundMask;
@@ -192,6 +191,11 @@ namespace WaterBlob
                 enabled = false;
                 return;
             }
+
+            // Ensure groundMask includes Default layer for ground detection compatibility
+            // This addresses cases where ground objects are on Default layer instead of dedicated ground layer
+            // References: RELEASE_NOTES_ONE_DROP.txt v0.3 - "ground detection now validates floor normals"
+            groundMask |= LayerMask.GetMask("Default");
 
             facingSign = transform.localScale.x >= 0f ? 1f : -1f;
         }
@@ -498,6 +502,10 @@ namespace WaterBlob
 
             rb.AddForce(Vector2.up * scaledJump, ForceMode2D.Impulse);
 
+            // Reset edge stick prevention when jumping to prevent movement lag near platforms
+            // References: RELEASE_NOTES_ONE_DROP.txt v0.2 - "anti-edge-stick collision handling"
+            cancelHorizontalForEdgeStick = false;
+
             if (waterResource != null)
             {
                 waterResource.ConsumeJump();
@@ -521,6 +529,10 @@ namespace WaterBlob
             rb.linearVelocity = v;
 
             rb.AddForce(scaledJumpImpulse, ForceMode2D.Impulse);
+
+            // Reset edge stick prevention when wall jumping to prevent movement lag near platforms
+            // References: RELEASE_NOTES_ONE_DROP.txt v0.2 - "anti-edge-stick collision handling"
+            cancelHorizontalForEdgeStick = false;
 
             facingSign = away;
             if (waterResource != null)
@@ -596,7 +608,7 @@ namespace WaterBlob
         private bool CheckGround(out RaycastHit2D hit)
         {
             Vector2 origin = (Vector2)transform.position;
-            float radius = (blobCharacter != null) ? blobCharacter.movementRadius : 0.45f;
+            float radius = (blobCharacter != null) ? blobCharacter.Radius : 0.45f;
             hit = Physics2D.CircleCast(origin, radius, Vector2.down, groundCheckDistance, groundMask);
             return hit.collider != null;
         }
@@ -621,7 +633,7 @@ namespace WaterBlob
             bool TrySide(int dir, out RaycastHit2D sideHit)
             {
                 Vector2 castDir = dir > 0 ? Vector2.right : Vector2.left;
-                float radius = (blobCharacter != null) ? blobCharacter.movementRadius : 0.45f;
+                float radius = (blobCharacter != null) ? blobCharacter.Radius : 0.45f;
                 sideHit = Physics2D.CircleCast(castOrigin, radius, castDir, wallCheckDistance, detectionMask);
                 return sideHit.collider != null;
             }
@@ -681,14 +693,14 @@ namespace WaterBlob
                 return 1f;
             }
 
-            return Mathf.Lerp(minAgilityScale, 1f, waterResource.NormalizedAmount);
+            return Mathf.Lerp(minAgilityScale, 1f, waterResource.WaterRatio);
         }
 
         private bool CheckCeiling(out RaycastHit2D hit, out float compression01)
         {
             Vector2 origin = (Vector2)transform.position;
             LayerMask mask = ceilingMask.value == 0 ? (groundMask | wallMask) : ceilingMask;
-            float radius = (blobCharacter != null) ? blobCharacter.movementRadius : 0.45f;
+            float radius = (blobCharacter != null) ? blobCharacter.Radius : 0.45f;
             hit = Physics2D.CircleCast(origin, radius, Vector2.up, ceilingCheckDistance, mask);
 
             if (hit.collider == null)

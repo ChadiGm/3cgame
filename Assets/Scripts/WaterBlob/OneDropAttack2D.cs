@@ -252,10 +252,10 @@ namespace WaterBlob
                 return;
             }
 
-            BulletRuntimeHandler handler = bulletObj.GetComponent<BulletRuntimeHandler>();
+            OneDropBulletRuntimeHandler handler = bulletObj.GetComponent<OneDropBulletRuntimeHandler>();
             if (handler == null)
             {
-                handler = bulletObj.AddComponent<BulletRuntimeHandler>();
+                handler = bulletObj.AddComponent<OneDropBulletRuntimeHandler>();
             }
 
             handler.Setup(
@@ -523,7 +523,7 @@ namespace WaterBlob
         }
     }
 
-    internal class BulletRuntimeHandler : MonoBehaviour
+    internal class OneDropBulletRuntimeHandler : MonoBehaviour
     {
         private LayerMask attackableLayers;
         private LayerMask nonDestructibleLayers;

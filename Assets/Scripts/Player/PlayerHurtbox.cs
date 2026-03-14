@@ -34,7 +34,7 @@ namespace WaterBlob
 
         private void HandleHit(GameObject touchedObj, Rigidbody2D rb)
         {
-            if (touchedObj == null || (waterResource != null && waterResource.IsInvulnerable)) return;
+            if (touchedObj == null) return;
             if (!IsLayerInMask(touchedObj.layer, touchEnemyLayers)) return;
 
             GameObject enemyRoot = rb != null ? rb.gameObject : touchedObj;
@@ -52,7 +52,7 @@ namespace WaterBlob
 
             if (waterResource != null)
             {
-                waterResource.TakeDamage(waterResource.damageCost);
+                waterResource.ConsumeDamage();
             }
 
             SpawnPlayerDamageEffect(transform.position);

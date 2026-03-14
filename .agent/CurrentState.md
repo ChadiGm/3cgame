@@ -37,3 +37,6 @@ Allowed statuses: `Done`, `In Progress`, `Blocked`, `Backlog`.
 - Authored HUD is loaded from `Resources` path (`UI/WaterHUD`); future UI scale may require a different asset-loading strategy.
 - **[Resolved]** `EnemyController.obstacleMask` auto-scopes at runtime to exclude player/interactive layers; player discovery is now event-driven (AI-001).
 - **[Resolved]** Repo hygiene: Stale references to deleted scripts cleared (CLEAN-101); legacy assets and temp files quarantined (CLEAN-102).
+- **[Resolved]** Fixed compilation blockers caused by duplicate `BulletRuntimeHandler` (FIX-101) and missing `OneDropWaterResource2D` API consumers (FIX-102).
+- **[Resolved]** Restored missing player action inputs (Jump, Climb, Attack) by aligning controller detection casts to respect dynamic softbody radius scaling, and resolving bullet self-destruction on softbody collision points (FIX-103).
+- **[Resolved]** Restored interaction loops (refills/damage) via `IWaterReceiver` and implemented elegant tag-based bullet ghosting to prevent softbody physics stalls (FIX-104).
