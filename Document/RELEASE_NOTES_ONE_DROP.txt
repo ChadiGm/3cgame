@@ -55,3 +55,12 @@ ONE DROP - Version 0.6 (Storm Enemy + Water Fill Pass - 2026-03-12)
 - Water HUD removed; water level now fills inside the character instead of using a UI gauge.
 - Water fill integration added to `WaterBlobMeshRenderer2D` (clip fill mesh based on `WaterRatio`).
 - New `WaterRatio` accessor added to `OneDropWaterResource2D` for visuals.
+
+ONE DROP - Version 0.7 (Fire Enemy Animation Pass - 2026-03-16)
+
+- New fire enemy sprite set imported with separate animation clips for Idle, PreShoot, Shoot, and PostShoot.
+- Fire enemy animator controller created with the four states wired to the new clips.
+- Fire enemy prefab added and placed in SampleScene.
+- Fire enemy now switches from Idle to PreShoot/Shoot/PostShoot when the player is within range.
+- Fire enemy now spawns a visible bullet during the Shoot state.
+- Fire enemy Shoot frame held longer so the mouth bullet frame is visible.
