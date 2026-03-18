@@ -32,6 +32,8 @@ namespace WaterBlob
         private readonly List<Vector3> worldPoints = new();
         private readonly List<Vector3> displayPoints = new();
         private readonly List<Vector3> clippedPoints = new();
+        private float runtimeScale = 1f;
+        private Vector2 runtimeOffset = Vector2.zero;
 
         private void Awake()
         {
@@ -167,7 +169,8 @@ namespace WaterBlob
 
             for (int i = 0; i < n; i++)
             {
-                Vector3 local = transform.InverseTransformPoint(source[i]);
+                Vector3 point = ApplyRuntimeVisual(source[i], center);
+                Vector3 local = transform.InverseTransformPoint(point);
                 vertices[i + 1] = local;
                 uv[i + 1] = new Vector2(local.x + 0.5f, local.y + 0.5f);
 
@@ -232,8 +235,53 @@ namespace WaterBlob
 
         private void DrawOutline()
         {
-            lineRenderer.positionCount = displayPoints.Count;
-            lineRenderer.SetPositions(displayPoints.ToArray());
+            if (displayPoints.Count == 0)
+            {
+                lineRenderer.positionCount = 0;
+                return;
+            }
+
+            Vector3 center = Vector3.zero;
+            for (int i = 0; i < displayPoints.Count; i++)
+            {
+                center += displayPoints[i];
+            }
+            center /= displayPoints.Count;
+
+            Vector3[] outline = new Vector3[displayPoints.Count];
+            for (int i = 0; i < displayPoints.Count; i++)
+            {
+                outline[i] = ApplyRuntimeVisual(displayPoints[i], center);
+            }
+
+            lineRenderer.positionCount = outline.Length;
+            lineRenderer.SetPositions(outline);
+        }
+
+        private Vector3 ApplyRuntimeVisual(Vector3 point, Vector3 center)
+        {
+            Vector3 result = point;
+            if (Mathf.Abs(runtimeScale - 1f) > 0.0001f)
+            {
+                result = center + (point - center) * runtimeScale;
+            }
+            if (runtimeOffset.sqrMagnitude > 0.0000001f)
+            {
+                result += new Vector3(runtimeOffset.x, runtimeOffset.y, 0f);
+            }
+            return result;
+        }
+
+        public void SetRuntimeVisual(float scale, Vector2 offset)
+        {
+            runtimeScale = Mathf.Max(0.01f, scale);
+            runtimeOffset = offset;
+        }
+
+        public void ResetRuntimeVisual()
+        {
+            runtimeScale = 1f;
+            runtimeOffset = Vector2.zero;
         }
 
 private void ConfigureMaterial()

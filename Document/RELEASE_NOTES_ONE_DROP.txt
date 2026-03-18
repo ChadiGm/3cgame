@@ -76,3 +76,6 @@ ONE DROP - Version 0.8 (Enemy AI Unification - 2026-03-18)
 - Fire enemy movement refined: fixed freeze cases after chase, consistent facing with projectile direction, and safer velocity application via FixedUpdate.
 - Little fire enemy animator now driven by movement (run bool) so its move/idle animations play correctly while patrolling and chasing.
 - Storm enemy now uses the same state logic and drives its Angry flag automatically while chasing.
+- Enemy fire bullets now deal damage to the player (consume water/HP) and destroy themselves on hit.
+- Fixed EnemyBulletDamage compile error by adding WaterBlob namespace import.
+- Damage feedback no longer distorts the blob: hit shrink/wobble is now applied to the mesh renderer instead of the player transform.

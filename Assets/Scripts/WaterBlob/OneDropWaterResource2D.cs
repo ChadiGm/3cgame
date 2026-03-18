@@ -74,7 +74,10 @@ namespace WaterBlob
 
         public void ConsumeDamage()
         {
-            Consume(damageDrain);
+            if (Consume(damageDrain))
+            {
+                TriggerDamageFeedback();
+            }
         }
 
         public void DepleteAllWater()
@@ -119,6 +122,16 @@ namespace WaterBlob
             }
 
             return true;
+        }
+
+        private void TriggerDamageFeedback()
+        {
+            OneDropDamageFeedback feedback = GetComponent<OneDropDamageFeedback>();
+            if (feedback == null)
+            {
+                feedback = gameObject.AddComponent<OneDropDamageFeedback>();
+            }
+            feedback.Play();
         }
 
         private IEnumerator HandleDeath()
