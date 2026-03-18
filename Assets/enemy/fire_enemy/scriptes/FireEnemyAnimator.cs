@@ -22,6 +22,7 @@ public class FireEnemyAnimator : MonoBehaviour
     [SerializeField] private Vector2 fireOffset = new Vector2(0.6f, 0.05f);
 
     private Animator anim;
+    private FireEnemyMovement movement;
     private bool isAttacking;
     private float nextAttackTime;
     private bool hasLoggedMissingBullet;
@@ -29,6 +30,7 @@ public class FireEnemyAnimator : MonoBehaviour
     private void Awake()
     {
         anim = GetComponent<Animator>();
+        movement = GetComponent<FireEnemyMovement>();
     }
 
     private void Start()
@@ -73,6 +75,7 @@ public class FireEnemyAnimator : MonoBehaviour
     private IEnumerator AttackSequence()
     {
         isAttacking = true;
+        if (movement != null) movement.SetAttacking(true);
 
         yield return PlayFor(preShootClip, "PreShoot", 0.42f);
         SpawnBullet();
@@ -81,6 +84,7 @@ public class FireEnemyAnimator : MonoBehaviour
 
         nextAttackTime = Time.time + attackCooldown;
         isAttacking = false;
+        if (movement != null) movement.SetAttacking(false);
     }
 
     private IEnumerator PlayFor(AnimationClip clip, string stateName, float fallbackLength)
@@ -113,12 +117,28 @@ public class FireEnemyAnimator : MonoBehaviour
 
         float facingSign = transform.localScale.x >= 0f ? 1f : -1f;
         Vector3 spawnPos = transform.position + new Vector3(fireOffset.x * facingSign, fireOffset.y, 0f);
-        GameObject bulletObj = Instantiate(bulletPrefab, spawnPos, Quaternion.identity);
+
+        Vector2 direction = new Vector2(facingSign, 0f);
+        if (target != null)
+        {
+            Vector2 toTarget = (Vector2)(target.position - spawnPos);
+            if (toTarget.sqrMagnitude > 0.0001f)
+            {
+                direction = toTarget.normalized;
+            }
+        }
+        Object spawned = Instantiate((Object)bulletPrefab, spawnPos, Quaternion.identity);
+        GameObject bulletObj = spawned as GameObject;
+        if (bulletObj == null)
+        {
+            Debug.LogError("[FireEnemyAnimator] bulletPrefab must be a GameObject prefab.", this);
+            return;
+        }
 
         Rigidbody2D bulletRb2D = bulletObj.GetComponent<Rigidbody2D>();
         if (bulletRb2D != null)
         {
-            bulletRb2D.linearVelocity = new Vector2(bulletSpeed * facingSign, 0f);
+            bulletRb2D.linearVelocity = direction * bulletSpeed;
             bulletRb2D.gravityScale = 0f;
         }
         else
@@ -127,7 +147,7 @@ public class FireEnemyAnimator : MonoBehaviour
             if (bulletRb3D != null)
             {
                 bulletRb3D.useGravity = false;
-                bulletRb3D.linearVelocity = new Vector3(bulletSpeed * facingSign, 0f, 0f);
+                bulletRb3D.linearVelocity = new Vector3(direction.x, direction.y, 0f) * bulletSpeed;
                 bulletRb3D.constraints = RigidbodyConstraints.FreezePositionY
                                        | RigidbodyConstraints.FreezePositionZ
                                        | RigidbodyConstraints.FreezeRotation;
@@ -137,6 +157,15 @@ public class FireEnemyAnimator : MonoBehaviour
         if (bulletLifetime > 0f)
         {
             Destroy(bulletObj, bulletLifetime);
+        }
+
+        // Face the shot direction so sprite orientation matches the projectile.
+        if (direction.sqrMagnitude > 0.0001f)
+        {
+            float sign = direction.x >= 0f ? 1f : -1f;
+            Vector3 scale = transform.localScale;
+            scale.x = Mathf.Abs(scale.x) * sign;
+            transform.localScale = scale;
         }
     }
 

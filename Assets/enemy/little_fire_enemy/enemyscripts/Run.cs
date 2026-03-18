@@ -59,7 +59,7 @@ public class NewMonoBehaviourScript : MonoBehaviour
         transform.localScale = scale;
 
         // Animation: always running while moving
-        anim.SetBool("run", true);
+        //anim.SetBool("run", true);
 
         // Check if reached patrol boundary
         float distFromStart = transform.position.x - startX;

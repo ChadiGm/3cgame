@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 5540928484494916992}
   - component: {fileID: 2788772141641757813}
   - component: {fileID: 6351257659673432073}
-  - component: {fileID: 5941092447569246845}
+  - component: {fileID: 7200000000000000000}
   - component: {fileID: 7663691277931750343}
   - component: {fileID: 4932489009955361928}
   m_Layer: 7
@@ -165,7 +165,7 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 2.8717346, y: 3.1759317}
   m_EdgeRadius: 0
---- !u!114 &5941092447569246845
+--- !u!114 &7200000000000000000
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -174,12 +174,20 @@ MonoBehaviour:
   m_GameObject: {fileID: 3928768594335554840}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ebc24e9cc4dd0484bbf43e5d9fd6d26f, type: 3}
+  m_Script: {fileID: 11500000, guid: 91c36762bea34e78914f1fdd289d0ba2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   speed: 3
   patrolDistance: 5
-  waitTime: 2
+  waitTime: 0.5
+  leftPoint: {fileID: 0}
+  rightPoint: {fileID: 0}
+  target: {fileID: 0}
+  detectionRange: 6
+  exitBuffer: 1.5
+  chaseSpeedMultiplier: 1.3
+  returnSpeedMultiplier: 1.1
+  returnSnapDistance: 0.1
 --- !u!95 &7663691277931750343
 Animator:
   serializedVersion: 7
@@ -221,7 +229,7 @@ MonoBehaviour:
   preShootClip: {fileID: 7400000, guid: 3a3f4c9b084343e2b243425b878ef7c0, type: 2}
   shootClip: {fileID: 7400000, guid: 252c7b0a58834b0d9fe4f402a1a2aa9d, type: 2}
   postShootClip: {fileID: 7400000, guid: 85dde3a45a8a4c128cdd1596bebd84b5, type: 2}
-  bulletPrefab: {fileID: 100100000, guid: 09b37b94458ba74408a8645f2d0ecdef, type: 3}
+  bulletPrefab: {fileID: 5495394483912083182, guid: cd15d5c8415a4d47ac9f69c0990f9f34, type: 3}
   bulletSpeed: 10
   bulletLifetime: 4
   fireOffset: {x: 0.6, y: 0.05}

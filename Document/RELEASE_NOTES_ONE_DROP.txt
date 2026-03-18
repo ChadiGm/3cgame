@@ -63,4 +63,16 @@ ONE DROP - Version 0.7 (Fire Enemy Animation Pass - 2026-03-16)
 - Fire enemy prefab added and placed in SampleScene.
 - Fire enemy now switches from Idle to PreShoot/Shoot/PostShoot when the player is within range.
 - Fire enemy now spawns a visible bullet during the Shoot state.
-- Fire enemy Shoot frame held longer so the mouth bullet frame is visible.
+- Fire enemy Shoot clip updated to remove the embedded projectile frame; projectile now comes only from the bullet prefab.
+- New fire bullet prefab added using frame 07 as the projectile sprite.
+- Fire bullets now travel toward the player using Rigidbody2D velocity.
+- Fire enemy bullet spawn now safely validates the prefab type to prevent runtime errors.
+- Fire enemy movement upgraded: patrol → chase → return states with distance-based detection and return snap, applied to storm and little fire enemies.
+- Little fire enemy animations now driven by movement script (run bool) so movement/idle play correctly.
+
+ONE DROP - Version 0.8 (Enemy AI Unification - 2026-03-18)
+
+- Unified enemy movement brain (patrol → chase → return) added to storm and little fire enemies, with configurable patrol bounds, detection range, chase/return speed multipliers, and snap-to-path return.
+- Fire enemy movement refined: fixed freeze cases after chase, consistent facing with projectile direction, and safer velocity application via FixedUpdate.
+- Little fire enemy animator now driven by movement (run bool) so its move/idle animations play correctly while patrolling and chasing.
+- Storm enemy now uses the same state logic and drives its Angry flag automatically while chasing.
