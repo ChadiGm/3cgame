@@ -50,7 +50,7 @@ This project does not use Unity Tilemaps for platforms. Platforms are prefab-bas
 
 To copy/download the platform pieces (and keep references intact), include the prefab files **and** their `.meta` files:
 - `Assets/Prefabs/LevelPieces/Platforms/BouncyPlatform.prefab`
-- `Assets/Prefabs/LevelPieces/Platforms/LavaPlatform .prefab`
+- `Assets/Prefabs/LevelPieces/Platforms/LavaPlatform .prefab` (note the space before `.prefab`)
 - `Assets/Prefabs/LevelPieces/Platforms/waterPlatform.prefab`
 
 Required scripts to make them work in another project/branch:
@@ -65,7 +65,7 @@ Required scripts to make them work in another project/branch:
 
 Materials used by the prefabs:
 - `Assets/Materials/water.mat`
-- `Assets/Materials/laval.mat`
+- `Assets/Materials/laval.mat` (lava material, filename is `laval.mat`)
 - `Assets/Materials/rock.mat`
 
 In Unity, you can export a single downloadable file by selecting the `Assets/Prefabs/LevelPieces/Platforms` folder and using **Assets → Export Package…** with **Include dependencies** enabled.
