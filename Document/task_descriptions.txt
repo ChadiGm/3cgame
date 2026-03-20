@@ -1,0 +1,159 @@
+story code: EN1-CODE
+story friendly name: EN1-CODE_LITTLEFIRE_Scripts
+Description:
+I implemented the LittleFire movement behavior by reusing `FireEnemyMovement` (Assets/enemy/fire_enemy/scriptes/FireEnemyMovement.cs) on `Assets/enemy/little_fire_enemy/little_fire_enemy.prefab`. The script runs a Patrol/Chase/Return state machine in `HandleState()`/`TickState()`, computes bounds from `leftPoint`/`rightPoint` or `startX +/- patrolDistance`, and drives `Rigidbody2D.linearVelocity` in `FixedUpdate` while flipping `transform.localScale.x` in `Flip()`. I enabled `setMoveBool` with `moveBoolName = "run"` so the animator transitions in `Enemy1.controller` are driven automatically.
+
+story code: EN1-SPR
+story friendly name: EN1-SPR_LITTLEFIRE_Sprites
+Description:
+I prepared the LittleFire sprite set under `Assets/enemy/little_fire_enemy/enemyimage/` (frames `1.png`-`4.png`) and the stop/idle set in `enemyimage/enemystop/` (`5.png`-`8.png`). These are the frames used by the LittleFire animation clips in the controller.
+
+story code: EN1-ANN
+story friendly name: EN1-ANN_LITTLEFIRE_Animation
+Description:
+I built the LittleFire Animator Controller `Assets/enemy/little_fire_enemy/enemyannimation/Enemy1.controller` with `stop` and `move` states (clips `stop.anim` and `move.anim`). The controller uses a single bool parameter `run` with transitions both ways, so the movement script can flip the state by toggling `Animator.SetBool("run", ...)`.
+
+story code: EN2-CODE
+story friendly name: EN2-CODE_STORM_Scripts
+Description:
+I wrote `StormEnemyAI` (Assets/enemy/storm_ennemy/Scriptes/StormEnemyAI.cs) with a three-state Patrol/Chase/Return loop, detection hysteresis (`detectionRange` + `exitBuffer`), and optional patrol bounds (`leftPoint`/`rightPoint`). The script sets `Rigidbody2D.linearVelocity` in `FixedUpdate` and flips the sprite using the cached `originalScale`. I also drive the animator's `IsAngry` bool in `UpdateAngerFlag()` so the idle/angry animation switches based on the chase state.
+
+story code: EN2-ART
+story friendly name: EN2-ART_STORM_Sprites
+Description:
+I imported the storm enemy sprite frames `storm_frame_01.png`-`storm_frame_10.png` under `Assets/enemy/storm_ennemy/sprites/` for idle and angry cycles.
+
+story code: EN2-ANN
+story friendly name: EN2-ANN_STORM_Animation
+Description:
+I configured `Assets/enemy/storm_ennemy/animations/StormEnemy.controller` with `Idle` and `Angry` states linked to `StormIdle.anim` and `StormAngry.anim`. The transitions are keyed by the `IsAngry` bool parameter (true to Angry, false to Idle) with a 0.25s blend to keep the swap smooth.
+
+story code: EN3-CODE
+story friendly name: EN3-CODE_FIRE_SCRIPT
+Description:
+I implemented the fire shooter logic in `Assets/enemy/fire_enemy/scriptes/FireEnemyAnimator.cs`, using an `AttackSequence()` coroutine that plays `PreShoot -> Shoot -> PostShoot` and spawns bullets in the middle. `SpawnBullet()` instantiates the `bulletPrefab`, computes a facing-aware `fireOffset`, and applies velocity on `Rigidbody2D` (or `Rigidbody` fallback) using `bulletSpeed` plus `bulletLifetime` cleanup. I tied it to `FireEnemyMovement` via `SetAttacking(true/false)` so the enemy pauses movement while shooting.
+
+story code: EN3-ART
+story friendly name: EN3-ART_FIRE_Sprites
+Description:
+I imported the fire shooter sprites `fire_frame_01.png`-`fire_frame_11.png` under `Assets/enemy/fire_enemy/sprites/` for idle, pre-shoot, shoot, and post-shoot frames.
+
+story code: EN3-ANN
+story friendly name: EN3-ANN_FIRE_Animation
+Description:
+I created the `Assets/enemy/fire_enemy/animations/FireEnemy.controller` state machine with `Idle`, `PreShoot`, `Shoot`, and `PostShoot` states mapped to `FireEnemy_Idle.anim`, `FireEnemy_PreShoot.anim`, `FireEnemy_Shoot.anim`, and `FireEnemy_PostShoot.anim`. There are no parameters; the animator is driven explicitly by `anim.Play(...)` in `FireEnemyAnimator`, which keeps the projectile purely in code.
+
+story code: EN3ShB-SPR
+story friendly name: EN3ShB-SPR_SHOOTBULLET_Assets
+Description:
+I set up the bullet visual using `Assets/enemy/fire_enemy/sprites/fire_frame_07.png` and wired it into `fire_bullet.prefab`'s `SpriteRenderer` (sorting order 12 and warm tint) so the projectile renders as a small glowing fireball.
+
+story code: EN3ShB-CODE
+story friendly name: EN3ShB-CODE_SHOOTBULLET_script
+Description:
+I wrote `EnemyBulletDamage` (Assets/enemy/fire_enemy/scriptes/EnemyBulletDamage.cs) to damage the player on hit via `OnTriggerEnter2D`/`OnCollisionEnter2D` and `OneDropWaterResource2D.ConsumeDamage()`, then destroy the bullet. This keeps bullet damage decoupled from the fire enemy animator while still using the `Player` tag for filtering.
+
+story code: ALLENEMY-DS
+story friendly name: ALLENEMY-DS_Damage_System
+Description:
+I centralized enemy damage behavior using two paths: `OneDropAttack2D.TryHandleEnemyTouch()` destroys enemies on contact when they're in `touchEnemyLayers`, and `BulletRuntimeHandler` inside `OneDropAttack2D` destroys enemies hit by player bullets based on `bulletAttackableLayers`. For enemy projectiles, `EnemyBulletDamage` feeds damage into `OneDropWaterResource2D.ConsumeDamage()` and removes the projectile, so all enemy damage routes are consistent.
+
+story code: SYSCHECK-CODE
+story friendly name: SYSCHECK-CODE_Checkpoint System SCRIPT
+Description:
+I implemented the checkpoint system across `CheckpointManager2D`, `Checkpoint2D`, and `CheckpointSensor2D` in `Assets/Scripts/Checkpoint/`. `CheckpointManager2D.EnsureInstance()` creates the singleton, `Checkpoint2D` handles activation via trigger/collision and optional default spawn, and `CheckpointSensor2D` can proxy activation from a child collider. `OneDropWaterResource2D` plugs into it by calling `RegisterPlayer()` on Awake and `TryGetRespawn()` during respawn.
+
+story code: SYSCHECK-VFX
+story friendly name: SYSCHECK-VFX_Checkpoint System Visual effect
+Description:
+I added editor-visible checkpoint feedback in `Checkpoint2D.OnDrawGizmos()` to show activated vs inactive checkpoints (green vs orange), and I kept named checkpoint GameObjects (`Checkpoint_Start`, `Checkpoint_middle`) in `Assets/Scenes/SampleScene.unity` so VFX can be attached cleanly. This gives quick visual validation without runtime overhead.
+
+story code: CHAR-DF
+story friendly name: CHAR-DF_DAMMAGEFEEDBACK
+Description:
+I built `OneDropDamageFeedback` (Assets/Scripts/WaterBlob/OneDropDamageFeedback.cs) to play a short shrink/wobble hit reaction via `Play()` and a coroutine that drives `WaterBlobMeshRenderer2D.SetRuntimeVisual()`. `OneDropWaterResource2D.ConsumeDamage()` calls `TriggerDamageFeedback()` so any damage event automatically triggers the effect, and `WaterBlobMeshRenderer2D.ResetRuntimeVisual()` returns the blob to normal.
+
+story code: CHAR-SB
+story friendly name: CHAR-SB_Soft Body
+Description:
+I implemented the soft-body character in `WaterBlobCharacter2D`, generating a ring of `Rigidbody2D` point bodies and `CircleCollider2D` points in `RebuildBlob()`, then linking them with core/ring/secondary springs. I exposed tuning fields like `pointCount`, `radius`, `coreSpringFrequency`, and `ringSpringDamping` so the blob can be adjusted without touching code.
+
+story code: CHAR-SH
+story friendly name: CHAR-SH_water_shoot_Projectile
+Description:
+I implemented water shooting in `OneDropAttack2D` with a `firePoint`, `bulletPrefab`, and `shootCooldown`, then apply velocity and lifetime in `ShootHorizontal()`. The script spawns a muzzle effect via `SpawnMuzzleEffect()` (falling back to `ShootMuzzleEffect` when no prefab is assigned) and configures `BulletRuntimeHandler.Setup(...)` so bullets respect `bulletAttackableLayers`, `bulletNonDestructibleLayers`, and `bulletIgnoredLayers`. I also added optional `BulletWaterBlobVisual` generation so player bullets match the blob look at runtime.
+
+story code: CHAR-WC
+story friendly name: CHAR-WC_Character_waterwall_climbing
+Description:
+I built wall climbing in `OneDropController2D` using `CheckWall()` BoxCasts with `wallCheckDistance` and a separate `climbableWallMask` for eligible surfaces. `UpdateClimbState()` toggles `isClimbing`, `ApplyClimbMovement()` drives vertical movement using `climbSpeed`/`climbAcceleration`, and `DoWallJump()` applies `wallJumpHorizontalForce` + `wallJumpVerticalForce` when allowed. I also added `allowDetachByPressingAway` so players can reliably exit a wall by pushing away.
+
+story code: CHAR-AB
+story friendly name: CHAR-AB_Ability_Of_Kill_Enemy_Without_shoot
+Description:
+I implemented the kill-without-shooting ability inside `OneDropAttack2D` by checking `touchEnemyLayers` and calling `TryHandleEnemyTouch()` on collisions/triggers. That path spawns the vaporization effect (`SpawnEnemyTouchVaporization`), destroys the enemy root object, and applies a short invulnerability window (`touchInvulnerabilityTime`) to avoid rapid double-hits.
+
+story code: CAM-FS
+story friendly name: CAM-FS_FollowSystem
+Description:
+I created `CameraFollow2D` with a smoothed follow using `Vector3.SmoothDamp`, plus optional `clampX`/`clampY` bounds (`xLimits`, `yLimits`) so the camera stays inside the level. The script auto-finds the player by name if no target is assigned and applies a configurable `offset`.
+
+story code: CON-IN
+story friendly name: CON-IN_InputSystem
+Description:
+I implemented input smoothing in `WaterBlobInput2D` with `riseRate`, `fallRate`, and `stickDeadzone`, producing a stable `Move` vector and queued jump presses via `ConsumeJumpPressed()`. The script supports both the new Input System (`Keyboard`/`Gamepad`) and legacy input, and the project also contains the `InputSystem_Actions.inputactions` asset for future bindings.
+
+story code: CHAR-CORE
+story friendly name: CHAR-CORE_Core System
+Description:
+I built the main character controller in `OneDropController2D`, combining acceleration-based movement, jump buffering/coyote time, slide dashes, and rotation handling. It integrates with `OneDropWaterResource2D` by calling `ConsumeMove`, `ConsumeJump`, and `ConsumeSlide` at the right moments, and drives visual squash/stretch using the soft-body parameters. I kept the physics in `FixedUpdate` and used explicit timers (`slideCooldownTimer`, `jumpIntervalTimer`) to make state transitions deterministic.
+
+story code: ALLENEMY-NAV
+story friendly name: ALLENEMY-NAV_Navigation-PATROL-CHASE-RETURN AI
+Description:
+I standardized enemy navigation by using a Patrol/Chase/Return state machine in both `FireEnemyMovement` and `StormEnemyAI`, including detection hysteresis (`detectionRange` + `exitBuffer`) and optional patrol bounds (`leftPoint`/`rightPoint`). Both scripts write velocity in `FixedUpdate` and flip the sprite with a cached `originalScale`, which keeps animation orientation consistent across enemy types.
+
+story code: ENEMY-01
+story friendly name: ENEMY-01_LITTLEFIRE
+Description:
+I integrated the LittleFire prefab (`Assets/enemy/little_fire_enemy/little_fire_enemy.prefab`) with `Rigidbody2D`, `BoxCollider2D`, `SpriteRenderer`, and the `Enemy1.controller` animator. I attached `FireEnemyMovement` and enabled `setMoveBool` so the prefab's `run` parameter drives the `stop/move` animations without manual animation triggers.
+
+story code: ENEMY-02
+story friendly name: ENEMY-02_STORM
+Description:
+I wired the storm enemy prefab (`Assets/enemy/storm_ennemy/enemy_storm.prefab`) with `StormEnemyAI`, `Rigidbody2D`, `BoxCollider2D`, and `StormEnemy.controller`. The prefab scales the sprite down for gameplay and uses the `IsAngry` parameter to swap between `StormIdle` and `StormAngry` clips during chase.
+
+story code: ENEMY-03
+story friendly name: ENEMY-03_FIRESHOTER
+Description:
+I assembled the fire shooter prefab (`Assets/enemy/fire_enemy/fire_enemy.prefab`) with `FireEnemyMovement`, `FireEnemyAnimator`, and the `FireEnemy.controller` animator. The prefab references `fire_bullet.prefab` in `FireEnemyAnimator.bulletPrefab`, so attacks are purely code-driven and the animation stays clean.
+
+story code: CHAR
+story friendly name: CHAR_Playable_Main_Character
+Description:
+I set up the playable character as a composition of `WaterBlobCharacter2D` (soft-body physics), `WaterBlobMeshRenderer2D` (procedural mesh), `OneDropController2D` (movement), `OneDropAttack2D` (shooting), `OneDropWaterResource2D` (resource/respawn), and `WaterBlobInput2D` (input). This keeps visuals, physics, and combat decoupled while still sharing the same water-resource budget.
+
+story code: ENEMY-03-Sb
+story friendly name: ENEMY-03_Sb_SHOOTBULLET
+Description:
+I integrated the shooter bullet variant by wiring `fire_bullet.prefab` into `FireEnemyAnimator` and tuning `fireOffset`, `bulletSpeed`, and `bulletLifetime` so the projectile exits the mouth cleanly. The prefab carries the `EnemyBulletDamage` component and a trigger `CircleCollider2D`, so the bullet both renders and applies damage out of the box.
+
+story code: ALLENEMY-HP
+story friendly name: ALLENEMY-HP_Enemy Health
+Description:
+I implemented a minimal enemy health policy where enemies are destroyed on the first valid hit: `BulletRuntimeHandler` checks `bulletAttackableLayers` before calling `Destroy(target)`, and `TryHandleEnemyTouch()` vaporizes enemies on contact. This keeps enemy survivability simple for now while leaving room to replace `Destroy` with an HP component later.
+
+story code: EN2ShB-CODE
+story friendly name: EN2ShB-CODE_SHOOTBULLET_script
+Description:
+I scoped the storm bullet behavior to mirror the fire bullet flow (`FireEnemyAnimator.SpawnBullet` + `EnemyBulletDamage`), but there is currently no storm-specific bullet script in `Assets/enemy/storm_ennemy/`. This entry is ready to be implemented once storm shooting is added.
+
+story code: EN2ShB-SPR
+story friendly name: EN2ShB-SPR_SHOOTBULLET_Assets
+Description:
+I have not added storm-specific bullet sprites yet; the project currently contains only fire bullet art (`Assets/enemy/fire_enemy/sprites/fire_frame_07.png`). This story is ready to be filled once storm projectile frames are imported.
+
+story code: ENEMY-02-Sb
+story friendly name: ENEMY-02-Sb_SHOOTBULLET
+Description:
+I have not integrated a storm shoot-bullet prefab yet; `enemy_storm.prefab` currently only uses `StormEnemyAI` and the idle/angry animations. When we add a storm bullet prefab, it should follow the same pattern as `fire_bullet.prefab` + `EnemyBulletDamage`.

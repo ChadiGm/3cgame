@@ -1,0 +1,33 @@
+Story code,Story Friendly Name,Task Description
+EN1-CODE,EN1-CODE_LITTLEFIRE_Scripts,"LittleFire enemy AI and movement scripts (patrol, chase, return, animator driving)."
+EN1-SPR,EN1-SPR_LITTLEFIRE_Sprites,LittleFire sprite set (idle/move/stop frames).
+EN1-ANN,EN1-ANN_LITTLEFIRE_Animation,LittleFire animations (idle/move/stop).
+EN2-CODE,EN2-CODE_STORM_Scripts,Storm enemy AI scripts with patrol/chase/return and angry state.
+EN2-ART,EN2-ART_STORM_Sprites,Storm sprite set (idle/angry frames).
+EN2-ANN,EN2-ANN_STORM_Animation,Storm animations (idle/angry).
+EN3-CODE,EN3-CODE_FIRE_SCRIPT,"Fire shooter enemy scripts (shoot logic, bullet spawn, chase)."
+EN3-ART,EN3-ART_FIRE_Sprites,Fire shooter sprite set (all frames).
+EN3-ANN,EN3-ANN_FIRE_Animation,Fire shooter animations (idle/pre-shoot/shoot/post).
+EN3ShB-SPR,EN3ShB-SPR_SHOOTBULLET_Assets,Fire bullet sprite/visual asset (frame 07 fireball).
+EN3ShB-CODE,EN3ShB-CODE_SHOOTBULLET_script,"Fire bullet behavior (spawn, travel, hit damage)."
+ALLENEMY-DS,ALLENEMY-DS_Damage_System,Shared enemy damage handling (touch + bullet hit).
+SYSCHECK-CODE,SYSCHECK-CODE_Checkpoint System SCRIPT,"Checkpoint system scripts (activate, respawn)."
+SYSCHECK-VFX,SYSCHECK-VFX_Checkpoint System Visual effect,Checkpoint visual feedback/VFX.
+CHAR-DF,CHAR-DF_DAMMAGEFEEDBACK,Player damage feedback (shrink + wobble + flash).
+CHAR-SB,CHAR-SB_Soft Body,Player soft-body physics and deformation system.
+CHAR-SH,CHAR-SH_water_shoot_Projectile,Player water shooting and bullet system.
+CHAR-WC,CHAR-WC_Character_waterwall_climbing,Player wall-climb/wall-jump mechanics.
+CHAR-AB,CHAR-AB_Ability_Of_Kill_Enemy_Without_shoot,Special ability logic (kill without shooting).
+CAM-FS,CAM-FS_FollowSystem,Camera follow system with bounds/smoothing.
+CON-IN,CON-IN_InputSystem,Input handling for keyboard/controller.
+CHAR-CORE,CHAR-CORE_Core System,"Core character controller (movement, states, transitions)."
+ALLENEMY-NAV,ALLENEMY-NAV_Navigation-PATROL-CHASE-RETURN AI,Shared enemy navigation AI (patrol ? chase ? return).
+ENEMY-01,ENEMY-01_LITTLEFIRE,LittleFire enemy prefab integration and tuning.
+ENEMY-02,ENEMY-02_STORM,Storm enemy prefab integration and tuning.
+ENEMY-03,ENEMY-03_FIRESHOTER,Fire shooter enemy prefab integration and tuning.
+CHAR,CHAR_Playable_Main_Character,"Full playable character setup (controller, visuals, water resource)."
+ENEMY-03-Sb,ENEMY-03_Sb_SHOOTBULLET,Fire shooter bullet variant integration.
+ALLENEMY-HP,ALLENEMY-HP_Enemy Health,Enemy health handling (currently destroy on hit; extend to HP if needed).
+EN2ShB-CODE,EN2ShB-CODE_SHOOTBULLET_script,Storm bullet behavior script (if used).
+EN2ShB-SPR,EN2ShB-SPR_SHOOTBULLET_Assets,Storm bullet visual assets (if used).
+ENEMY-02-Sb,ENEMY-02-Sb_SHOOTBULLET,Storm shoot-bullet variant integration.

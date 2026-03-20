@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 6b5b79308c7abae40ae24a2fa6ce16e5
+guid: a55b714e73e69144a94816a28c7249df
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -110,13 +110,35 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: 844a096b-c7b0-4362-9c08-7516455e2017_0
+      name: ChatGPT Image Mar 16, 2026, 11_26_19 AM 1_0
       rect:
         serializedVersion: 2
-        x: 192
-        y: 495
-        width: 596
-        height: 443
+        x: 1326
+        y: 697
+        width: 130
+        height: 72
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 20}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: fce7822b732dbe74781224589ade9a21
+      internalID: 1636596718
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ChatGPT Image Mar 16, 2026, 11_26_19 AM 1_1
+      rect:
+        serializedVersion: 2
+        x: 510
+        y: 763
+        width: 275
+        height: 188
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -125,8 +147,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 3265c1d740a75294c9b18fad749bae7c
-      internalID: -731032072
+      spriteID: c292ffc2c8c1255439319c4bd8137c1f
+      internalID: 372113930
       vertices: []
       indices: 
       edges: []
@@ -135,7 +157,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: b9027b59665468d4b87f9a4effcf3aee
+    spriteID: 156ee5810e8283849a2750fd413a0054
     internalID: 0
     vertices: []
     indices: 
@@ -145,7 +167,8 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      844a096b-c7b0-4362-9c08-7516455e2017_0: -731032072
+      ChatGPT Image Mar 16, 2026, 11_26_19 AM 1_0: 1636596718
+      ChatGPT Image Mar 16, 2026, 11_26_19 AM 1_1: 372113930
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

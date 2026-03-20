@@ -1,0 +1,159 @@
+story code: EN1-CODE
+story friendly name: EN1-CODE_LITTLEFIRE_Scripts
+Description:
+LittleFire enemy behavior and AI implementation.
+
+story code: EN1-SPR
+story friendly name: EN1-SPR_LITTLEFIRE_Sprites
+Description:
+LittleFire visual sprite set and variations.
+
+story code: EN1-ANN
+story friendly name: EN1-ANN_LITTLEFIRE_Animation
+Description:
+LittleFire animation set (idle, move, stop).
+
+story code: EN2-CODE
+story friendly name: EN2-CODE_STORM_Scripts
+Description:
+Storm enemy AI and state logic (patrol/chase/return, angry state).
+
+story code: EN2-ART
+story friendly name: EN2-ART_STORM_Sprites
+Description:
+Storm visual sprite set (idle/angry).
+
+story code: EN2-ANN
+story friendly name: EN2-ANN_STORM_Animation
+Description:
+Storm animation set (idle/angry).
+
+story code: EN3-CODE
+story friendly name: EN3-CODE_FIRE_SCRIPT
+Description:
+Fire shooter enemy gameplay logic and attack flow.
+
+story code: EN3-ART
+story friendly name: EN3-ART_FIRE_Sprites
+Description:
+Fire shooter sprite set and visuals.
+
+story code: EN3-ANN
+story friendly name: EN3-ANN_FIRE_Animation
+Description:
+Fire shooter animation set (idle/pre-shoot/shoot/post).
+
+story code: EN3ShB-SPR
+story friendly name: EN3ShB-SPR_SHOOTBULLET_Assets
+Description:
+Fire projectile visual assets (fireball sprite/VFX).
+
+story code: EN3ShB-CODE
+story friendly name: EN3ShB-CODE_SHOOTBULLET_script
+Description:
+Fire projectile behavior and damage handling.
+
+story code: ALLENEMY-DS
+story friendly name: ALLENEMY-DS_Damage_System
+Description:
+Shared enemy damage system (touch and projectile damage).
+
+story code: SYSCHECK-CODE
+story friendly name: SYSCHECK-CODE_Checkpoint System SCRIPT
+Description:
+Checkpoint system logic (activation, respawn, persistence).
+
+story code: SYSCHECK-VFX
+story friendly name: SYSCHECK-VFX_Checkpoint System Visual effect
+Description:
+Checkpoint feedback and visual effects.
+
+story code: CHAR-DF
+story friendly name: CHAR-DF_DAMMAGEFEEDBACK
+Description:
+Player damage feedback system (visual hit reaction).
+
+story code: CHAR-SB
+story friendly name: CHAR-SB_Soft Body
+Description:
+Soft-body simulation for the player character.
+
+story code: CHAR-SH
+story friendly name: CHAR-SH_water_shoot_Projectile
+Description:
+Player water shooting system and projectile behavior.
+
+story code: CHAR-WC
+story friendly name: CHAR-WC_Character_waterwall_climbing
+Description:
+Player wall-climb/wall-jump mechanics.
+
+story code: CHAR-AB
+story friendly name: CHAR-AB_Ability_Of_Kill_Enemy_Without_shoot
+Description:
+Special player ability to eliminate enemies without shooting.
+
+story code: CAM-FS
+story friendly name: CAM-FS_FollowSystem
+Description:
+Camera follow system with smoothing and bounds.
+
+story code: CON-IN
+story friendly name: CON-IN_InputSystem
+Description:
+Input system for keyboard/gamepad controls.
+
+story code: CHAR-CORE
+story friendly name: CHAR-CORE_Core System
+Description:
+Core character controller: movement, states, transitions.
+
+story code: ALLENEMY-NAV
+story friendly name: ALLENEMY-NAV_Navigation-PATROL-CHASE-RETURN AI
+Description:
+Shared enemy navigation AI (patrol ? chase ? return).
+
+story code: ENEMY-01
+story friendly name: ENEMY-01_LITTLEFIRE
+Description:
+LittleFire enemy integration in the game (prefab + tuning).
+
+story code: ENEMY-02
+story friendly name: ENEMY-02_STORM
+Description:
+Storm enemy integration in the game (prefab + tuning).
+
+story code: ENEMY-03
+story friendly name: ENEMY-03_FIRESHOTER
+Description:
+Fire shooter enemy integration in the game (prefab + tuning).
+
+story code: CHAR
+story friendly name: CHAR_Playable_Main_Character
+Description:
+Main playable character setup and systems integration.
+
+story code: ENEMY-03-Sb
+story friendly name: ENEMY-03_Sb_SHOOTBULLET
+Description:
+Fire shooter shoot-bullet variant integration.
+
+story code: ALLENEMY-HP
+story friendly name: ALLENEMY-HP_Enemy Health
+Description:
+Enemy health model and death handling (currently destroy on hit).
+
+story code: EN2ShB-CODE
+story friendly name: EN2ShB-CODE_SHOOTBULLET_script
+Description:
+Storm projectile behavior (if used).
+
+story code: EN2ShB-SPR
+story friendly name: EN2ShB-SPR_SHOOTBULLET_Assets
+Description:
+Storm projectile visual assets (if used).
+
+story code: ENEMY-02-Sb
+story friendly name: ENEMY-02-Sb_SHOOTBULLET
+Description:
+Storm shoot-bullet variant integration (if used).
