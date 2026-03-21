@@ -215,7 +215,7 @@ TextureImporter:
         width: 205
         height: 846
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -237,7 +237,7 @@ TextureImporter:
         width: 232
         height: 151
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -246,6 +246,28 @@ TextureImporter:
       bones: []
       spriteID: 3e5fb97b6b5ae1740a4971681297ebad
       internalID: 201828760
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: forest-landscape-design-elements-set_7
+      rect:
+        serializedVersion: 2
+        x: 505
+        y: 370
+        width: 294
+        height: 841
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b818f2ce79c29ec46abdf0013a523d61
+      internalID: -978340187
       vertices: []
       indices: 
       edges: []
@@ -271,6 +293,7 @@ TextureImporter:
       forest-landscape-design-elements-set_4: -1187566936
       forest-landscape-design-elements-set_5: -1550612045
       forest-landscape-design-elements-set_6: 201828760
+      forest-landscape-design-elements-set_7: -978340187
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
