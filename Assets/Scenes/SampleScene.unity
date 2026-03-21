@@ -943,7 +943,7 @@ GameObject:
   m_Component:
   - component: {fileID: 99430843}
   - component: {fileID: 99430844}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: ston (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1336,7 +1336,7 @@ GameObject:
   m_Component:
   - component: {fileID: 125168145}
   - component: {fileID: 125168146}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: ston (3)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1596,9 +1596,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 134941943}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: jungle
-  m_TagString: Untagged
+  m_TagString: ground
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1616,8 +1616,8 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 626247691}
   - {fileID: 1396856008}
+  - {fileID: 333795501}
   - {fileID: 1538297857}
   - {fileID: 2057815692}
   m_Father: {fileID: 616644748}
@@ -2328,7 +2328,7 @@ GameObject:
   m_Component:
   - component: {fileID: 193428113}
   - component: {fileID: 193428114}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: ston
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2502,9 +2502,9 @@ GameObject:
   m_Component:
   - component: {fileID: 226984020}
   - component: {fileID: 226984021}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: ground (4)
-  m_TagString: Untagged
+  m_TagString: ground
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2985,9 +2985,9 @@ GameObject:
   - component: {fileID: 284247731}
   - component: {fileID: 284247732}
   - component: {fileID: 284247733}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: ground (3)
-  m_TagString: Untagged
+  m_TagString: ground
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -3521,6 +3521,156 @@ MonoBehaviour:
   clampY: 0
   xLimits: {x: -13, y: 26}
   yLimits: {x: -3.5, y: 8}
+--- !u!1 &333795500
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 333795501}
+  - component: {fileID: 333795503}
+  - component: {fileID: 333795502}
+  m_Layer: 3
+  m_Name: jungle (3)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &333795501
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 333795500}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 4.28, y: 4.57, z: 0}
+  m_LocalScale: {x: 2, y: 2, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 134941943}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!60 &333795502
+PolygonCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 333795500}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0, y: 0}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0.19999999}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 1.3, y: 0.72}
+    newSize: {x: 1, y: 1}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  m_Points:
+    m_Paths:
+    - - {x: 0.50214696, y: 0.21286261}
+      - {x: 0.35620213, y: 0.22514415}
+      - {x: 0.16947746, y: 0.17388523}
+      - {x: -0.0027866364, y: 0.17588174}
+      - {x: -0.12598145, y: 0.17210448}
+      - {x: -0.30283165, y: 0.1204468}
+      - {x: -0.5776203, y: 0.09738864}
+      - {x: -0.6614696, y: 0.09988928}
+      - {x: -0.6374885, y: -0.0067880005}
+      - {x: -0.60303193, y: -0.104685485}
+      - {x: -0.45372856, y: -0.37972054}
+      - {x: -0.21015358, y: -0.36590743}
+      - {x: 0.29526156, y: -0.3392461}
+      - {x: 0.28388214, y: -0.13773382}
+      - {x: 0.45263028, y: 0.08214699}
+  m_UseDelaunayMesh: 0
+--- !u!212 &333795503
+SpriteRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 333795500}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 0
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 0
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_Sprite: {fileID: 1636596718, guid: a55b714e73e69144a94816a28c7249df, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_FlipX: 0
+  m_FlipY: 0
+  m_DrawMode: 0
+  m_Size: {x: 1, y: 1}
+  m_AdaptiveModeThreshold: 0.5
+  m_SpriteTileMode: 0
+  m_WasSpriteAssigned: 1
+  m_MaskInteraction: 0
+  m_SpriteSortPoint: 0
 --- !u!1 &342630988
 GameObject:
   m_ObjectHideFlags: 0
@@ -4877,7 +5027,7 @@ GameObject:
   m_Component:
   - component: {fileID: 419830090}
   - component: {fileID: 419830091}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: ston
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6377,7 +6527,7 @@ GameObject:
   m_Component:
   - component: {fileID: 596259995}
   - component: {fileID: 596259996}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: ston
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6890,156 +7040,18 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!1 &626247690
-GameObject:
+--- !u!62 &627220656
+PhysicsMaterial2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 626247691}
-  - component: {fileID: 626247693}
-  - component: {fileID: 626247692}
-  m_Layer: 0
-  m_Name: jungle
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &626247691
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 626247690}
+  m_Name: WaterBlobRuntime
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 3.05, y: -1.53005, z: 0}
-  m_LocalScale: {x: 2, y: 2, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 134941943}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!60 &626247692
-PolygonCollider2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 626247690}
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Density: 1
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_ForceSendLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ForceReceiveLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ContactCaptureLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_CallbackLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_IsTrigger: 0
-  m_UsedByEffector: 0
-  m_CompositeOperation: 0
-  m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0}
-  m_SpriteTilingProperty:
-    border: {x: 0, y: 0, z: 0, w: 0.19999999}
-    pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 1.3, y: 0.72}
-    newSize: {x: 1, y: 1}
-    adaptiveTilingThreshold: 0.5
-    drawMode: 0
-    adaptiveTiling: 0
-  m_AutoTiling: 0
-  m_Points:
-    m_Paths:
-    - - {x: 0.50214696, y: 0.21286261}
-      - {x: 0.35620213, y: 0.22514415}
-      - {x: 0.16947746, y: 0.17388523}
-      - {x: -0.0027866364, y: 0.17588174}
-      - {x: -0.12598145, y: 0.17210448}
-      - {x: -0.30283165, y: 0.1204468}
-      - {x: -0.5776203, y: 0.09738864}
-      - {x: -0.5516254, y: 0.04193437}
-      - {x: -0.5678531, y: -0.034642085}
-      - {x: -0.50644094, y: -0.107156456}
-      - {x: -0.37690437, y: -0.27953562}
-      - {x: -0.26698494, y: -0.32637286}
-      - {x: 0.29526156, y: -0.3392461}
-      - {x: 0.28388214, y: -0.13773382}
-      - {x: 0.45263028, y: 0.08214699}
-  m_UseDelaunayMesh: 0
---- !u!212 &626247693
-SpriteRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 626247690}
-  m_Enabled: 1
-  m_CastShadows: 0
-  m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 0
-  m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 0
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_Sprite: {fileID: 1636596718, guid: a55b714e73e69144a94816a28c7249df, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_FlipX: 0
-  m_FlipY: 0
-  m_DrawMode: 0
-  m_Size: {x: 1, y: 1}
-  m_AdaptiveModeThreshold: 0.5
-  m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
-  m_MaskInteraction: 0
-  m_SpriteSortPoint: 0
+  friction: 0.1
+  bounciness: 0.24
+  m_FrictionCombine: 1
+  m_BounceCombine: 4
 --- !u!1 &630845359
 GameObject:
   m_ObjectHideFlags: 0
@@ -8094,7 +8106,7 @@ GameObject:
   m_Component:
   - component: {fileID: 694530820}
   - component: {fileID: 694530821}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: ston
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -8268,7 +8280,7 @@ GameObject:
   m_Component:
   - component: {fileID: 700985431}
   - component: {fileID: 700985432}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: ston
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -10752,7 +10764,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1092218809}
   - component: {fileID: 1092218810}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: ston
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -12233,35 +12245,8 @@ MonoBehaviour:
   secondarySpringDamping: 0.82
   radialStiffness: 12
   radialDamping: 8.5
-  maxHorizontalSpeed: 100
-  moveResponse: 0
-  maxControlForce: 0
-  pointMoveAssist: 0.2
-  rollTorque: 24
-  directionalLeanStrength: 1.35
-  invertDirectionalRoll: 1
-  slideReleaseFalloff: 0
-  slideMinSpeedForFalloff: 0.35
-  maxAngularVelocityDeg: 140
-  inputRollSpeedDeg: 0
-  velocityRollInfluence: 0
-  maxVelocityRollContribution: 24
-  angularAccelGrounded: 0
-  angularAccelAir: 0
-  angularDecelGrounded: 0
-  angularDecelAir: 0
-  noInputAngularDragBoost: 1.65
-  jumpImpulse: 20
-  jumpCompressionImpulse: 8
-  jumpCompressionPointAssist: 0.5
-  jumpLaunchBoost: 1.3
-  pointJumpAssist: 0.2
-  airControl: 0.7
-  coyoteTime: 0.16
-  jumpBufferTime: 0.16
-  groundMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
+  pointVelocityCarry: 0.2
+  maxPointCarrySpeed: 8
   bounciness: 0.24
   friction: 0.1
 --- !u!58 &1272719575
@@ -12274,7 +12259,7 @@ CircleCollider2D:
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
-  m_Material: {fileID: 2135169786}
+  m_Material: {fileID: 627220656}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -12403,16 +12388,18 @@ MonoBehaviour:
   moveSpeed: 20
   acceleration: 30
   minAccelerationFromSpeed: 4
-  jumpForce: 50
+  jumpForce: 20
   postJumpGroundIgnoreTime: 0.1
   minJumpInterval: 0.1
+  jumpPointImpulseScale: 0.22
+  wallJumpPointImpulseScale: 0.18
   overrideRigidbodyDamping: 1
   linearDamping: 0
   angularDamping: 0.05
   doubleTapWindow: 0.25
-  slideSpeed: 30
+  slideSpeed: 20
   slideDuration: 0.18
-  slideCooldown: 0.25
+  slideCooldown: 1
   climbSpeed: 8
   climbAcceleration: 55
   climbMinAccelFromSpeed: 4
@@ -12426,7 +12413,7 @@ MonoBehaviour:
   allowDetachByPressingAway: 1
   groundMask:
     serializedVersion: 2
-    m_Bits: 264
+    m_Bits: 8
   wallMask:
     serializedVersion: 2
     m_Bits: 64
@@ -12435,11 +12422,11 @@ MonoBehaviour:
   groundProbeHeightFactor: 0.22
   castWidthFactor: 0.95
   castHeightFactor: 0.95
+  jumpMaxGroundAngle: 65
   rotationLerpSpeed: 12
   maxGroundAngle: 35
   sideNormalMinX: 0.72
   sideNormalMaxY: 0.45
-  deformLerpSpeed: 20
   idleGroundSquash: 0.08
   idleGroundSpread: 0.06
   runSquash: 0.12
@@ -12456,9 +12443,17 @@ MonoBehaviour:
   wallAdhesionStretch: 0.1
   wallDetachStretch: 0.12
   visualMomentumOffset: 0.09
+  movementResponseDelay: 0.06
+  deformationSpring: 58
+  deformationDamping: 10
+  wobbleSpring: 44
+  wobbleDamping: 7.5
+  accelerationWobble: 0.05
+  impactWobble: 0.12
+  maxWobble: 0.24
   ceilingMask:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 4294967295
   ceilingCheckDistance: 0.14
   minVisualHeightScale: 0.82
   ceilingCompressionDampen: 0.25
@@ -13602,7 +13597,7 @@ GameObject:
   - component: {fileID: 1396856008}
   - component: {fileID: 1396856010}
   - component: {fileID: 1396856009}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: jungle (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -13618,7 +13613,7 @@ Transform:
   m_GameObject: {fileID: 1396856007}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1.08, y: 2.58, z: 0}
+  m_LocalPosition: {x: 2.83, y: 0.39, z: 0}
   m_LocalScale: {x: 2, y: 2, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -14189,9 +14184,9 @@ GameObject:
   - component: {fileID: 1452177657}
   - component: {fileID: 1452177658}
   - component: {fileID: 1452177656}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Sprite Shape Profile
-  m_TagString: Untagged
+  m_TagString: ground
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -14982,9 +14977,9 @@ GameObject:
   m_Component:
   - component: {fileID: 1530494034}
   - component: {fileID: 1530494035}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: ston
-  m_TagString: Untagged
+  m_TagString: ground
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -15085,7 +15080,7 @@ GameObject:
   - component: {fileID: 1538297857}
   - component: {fileID: 1538297859}
   - component: {fileID: 1538297858}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: jungle (2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -15101,7 +15096,7 @@ Transform:
   m_GameObject: {fileID: 1538297856}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -1.78, y: 5.69, z: 0}
+  m_LocalPosition: {x: -0.4, y: 2, z: 0}
   m_LocalScale: {x: 2, y: 2, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -16659,7 +16654,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1697770549}
   - component: {fileID: 1697770550}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: ston
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -17428,9 +17423,9 @@ GameObject:
   m_Component:
   - component: {fileID: 1779626691}
   - component: {fileID: 1779626692}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: ground
-  m_TagString: Untagged
+  m_TagString: ground
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -18256,7 +18251,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1867984937}
   - component: {fileID: 1867984938}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: ston (2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -19224,7 +19219,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1963628212}
   - component: {fileID: 1963628213}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: ston
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -19619,7 +19614,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2023217085}
   - component: {fileID: 2023217086}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: ston
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -19839,7 +19834,7 @@ GameObject:
   - component: {fileID: 2057815692}
   - component: {fileID: 2057815694}
   - component: {fileID: 2057815693}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: jungle (4)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -19855,7 +19850,7 @@ Transform:
   m_GameObject: {fileID: 2057815691}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 6.0321226, y: -0.03, z: 0}
+  m_LocalPosition: {x: 7.0321226, y: -1, z: 0}
   m_LocalScale: {x: 2, y: 2, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -20982,18 +20977,6 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!62 &2135169786
-PhysicsMaterial2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: WaterBlobRuntime
-  serializedVersion: 2
-  friction: 0.1
-  bounciness: 0.24
-  m_FrictionCombine: 1
-  m_BounceCombine: 4
 --- !u!1 &2141729247
 GameObject:
   m_ObjectHideFlags: 0
@@ -21505,7 +21488,7 @@ GameObject:
   m_Component:
   - component: {fileID: 945749103624086649}
   - component: {fileID: 8437888144840078824}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Cristall
   m_TagString: Untagged
   m_Icon: {fileID: 0}

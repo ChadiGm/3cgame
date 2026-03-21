@@ -32,8 +32,10 @@ namespace WaterBlob
         private readonly List<Vector3> worldPoints = new();
         private readonly List<Vector3> displayPoints = new();
         private readonly List<Vector3> clippedPoints = new();
-        private float runtimeScale = 1f;
+        private Vector2 runtimeScale = Vector2.one;
         private Vector2 runtimeOffset = Vector2.zero;
+        private Vector2 motionScale = Vector2.one;
+        private Vector2 motionOffset = Vector2.zero;
 
         private void Awake()
         {
@@ -261,30 +263,53 @@ namespace WaterBlob
         private Vector3 ApplyRuntimeVisual(Vector3 point, Vector3 center)
         {
             Vector3 result = point;
-            if (Mathf.Abs(runtimeScale - 1f) > 0.0001f)
+            Vector2 combinedScale = new(runtimeScale.x * motionScale.x, runtimeScale.y * motionScale.y);
+            Vector2 combinedOffset = runtimeOffset + motionOffset;
+
+            if (Mathf.Abs(combinedScale.x - 1f) > 0.0001f || Mathf.Abs(combinedScale.y - 1f) > 0.0001f)
             {
-                result = center + (point - center) * runtimeScale;
+                Vector2 delta = point - center;
+                delta = new Vector2(delta.x * combinedScale.x, delta.y * combinedScale.y);
+                result = center + (Vector3)delta;
             }
-            if (runtimeOffset.sqrMagnitude > 0.0000001f)
+
+            if (combinedOffset.sqrMagnitude > 0.0000001f)
             {
-                result += new Vector3(runtimeOffset.x, runtimeOffset.y, 0f);
+                result += new Vector3(combinedOffset.x, combinedOffset.y, 0f);
             }
+
             return result;
         }
 
         public void SetRuntimeVisual(float scale, Vector2 offset)
         {
-            runtimeScale = Mathf.Max(0.01f, scale);
+            float safeScale = Mathf.Max(0.01f, scale);
+            runtimeScale = new Vector2(safeScale, safeScale);
             runtimeOffset = offset;
         }
 
         public void ResetRuntimeVisual()
         {
-            runtimeScale = 1f;
+            runtimeScale = Vector2.one;
             runtimeOffset = Vector2.zero;
         }
 
-private void ConfigureMaterial()
+        public void SetMotionVisual(Vector2 axisScale, Vector2 offset)
+        {
+            motionScale = new Vector2(
+                Mathf.Max(0.01f, axisScale.x),
+                Mathf.Max(0.01f, axisScale.y)
+            );
+            motionOffset = offset;
+        }
+
+        public void ResetMotionVisual()
+        {
+            motionScale = Vector2.one;
+            motionOffset = Vector2.zero;
+        }
+
+        private void ConfigureMaterial()
         {
             Shader shader = FindBestShader();
             if (shader == null)
@@ -300,7 +325,7 @@ private void ConfigureMaterial()
             meshRenderer.sortingOrder = sortingOrder;
         }
 
-private void ConfigureLineRenderer()
+        private void ConfigureLineRenderer()
         {
             Shader lineShader = FindBestShader();
             if (lineShader == null)
@@ -321,7 +346,7 @@ private void ConfigureLineRenderer()
             lineRenderer.endColor = edgeColor;
         }
 
-private static Shader FindBestShader()
+        private static Shader FindBestShader()
         {
             Shader shader = Shader.Find("Sprites/Default");
             if (shader != null)
@@ -337,7 +362,6 @@ private static Shader FindBestShader()
 
             return Shader.Find("Unlit/Color");
         }
-
 
         private void OnValidate()
         {

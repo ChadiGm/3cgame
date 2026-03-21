@@ -21,6 +21,8 @@ namespace WaterBlob
         [SerializeField, Min(0f)] private float jumpForce = 12f;
         [SerializeField, Min(0f)] private float postJumpGroundIgnoreTime = 0.08f;
         [SerializeField, Min(0f)] private float minJumpInterval = 0.22f;
+        [SerializeField, Range(0f, 1f)] private float jumpPointImpulseScale = 0.22f;
+        [SerializeField, Range(0f, 1f)] private float wallJumpPointImpulseScale = 0.18f;
 
         [Header("Physics Tuning")]
         [SerializeField] private bool overrideRigidbodyDamping = true;
@@ -54,6 +56,7 @@ namespace WaterBlob
         [SerializeField, Range(0.05f, 0.5f)] private float groundProbeHeightFactor = 0.22f;
         [SerializeField, Range(0.5f, 1f)] private float castWidthFactor = 0.95f;
         [SerializeField, Range(0.5f, 1f)] private float castHeightFactor = 0.95f;
+        [SerializeField, Range(0f, 90f)] private float jumpMaxGroundAngle = 65f;
 
         [Header("Rotation")]
         [SerializeField, Min(0f)] private float rotationLerpSpeed = 12f;
@@ -64,7 +67,6 @@ namespace WaterBlob
         [SerializeField, Range(0f, 1f)] private float sideNormalMaxY = 0.45f;
 
         [Header("Soft Body Visual")]
-        [SerializeField, Min(0f)] private float deformLerpSpeed = 14f;
         [SerializeField, Min(0f)] private float idleGroundSquash = 0.08f;
         [SerializeField, Min(0f)] private float idleGroundSpread = 0.06f;
         [SerializeField, Min(0f)] private float runSquash = 0.12f;
@@ -82,6 +84,16 @@ namespace WaterBlob
         [SerializeField, Min(0f)] private float wallDetachStretch = 0.12f;
         [SerializeField, Min(0f)] private float visualMomentumOffset = 0.09f;
 
+        [Header("Soft Body Dynamics")]
+        [SerializeField, Min(0f)] private float movementResponseDelay = 0.06f;
+        [SerializeField, Min(0f)] private float deformationSpring = 58f;
+        [SerializeField, Min(0f)] private float deformationDamping = 10f;
+        [SerializeField, Min(0f)] private float wobbleSpring = 44f;
+        [SerializeField, Min(0f)] private float wobbleDamping = 7.5f;
+        [SerializeField, Min(0f)] private float accelerationWobble = 0.05f;
+        [SerializeField, Min(0f)] private float impactWobble = 0.12f;
+        [SerializeField, Min(0f)] private float maxWobble = 0.24f;
+
         [Header("Anti Crush")]
         [Tooltip("Extra layers to test for low ceilings. If empty, uses Ground + Wall masks.")]
         [SerializeField] private LayerMask ceilingMask = 0;
@@ -92,6 +104,7 @@ namespace WaterBlob
 
         private Rigidbody2D rb;
         private BoxCollider2D box;
+        private CircleCollider2D coreCircle;
         private PhysicsMaterial2D runtimeMaterial;
 
         private float inputX;
@@ -128,12 +141,28 @@ namespace WaterBlob
         private Vector2 currentGroundNormal = Vector2.up;
         private OneDropWaterResource2D waterResource;
         private WaterBlobCharacter2D blobCharacter;
+        private WaterBlobInput2D blobInput;
+        private WaterBlobMeshRenderer2D blobRenderer;
+        private Vector2 delayedVelocity;
+        private Vector2 delayedVelocityVelocity;
+        private Vector2 visualScaleRatio = Vector2.one;
+        private Vector2 visualScaleVelocity;
+        private Vector2 visualOffset;
+        private Vector2 visualOffsetVelocity;
+        private float wobbleState;
+        private float wobbleVelocity;
+        private bool jumpHeldLastFrame;
+        private bool blobJumpHeldLastFrame;
+        private readonly ContactPoint2D[] groundContactBuffer = new ContactPoint2D[24];
 
         private void Awake()
         {
             rb = GetComponent<Rigidbody2D>();
             box = GetComponent<BoxCollider2D>();
+            coreCircle = GetComponent<CircleCollider2D>();
             waterResource = GetComponent<OneDropWaterResource2D>();
+            blobInput = GetComponent<WaterBlobInput2D>();
+            blobRenderer = GetComponent<WaterBlobMeshRenderer2D>();
             if (waterResource == null)
             {
                 waterResource = gameObject.AddComponent<OneDropWaterResource2D>();
@@ -148,6 +177,9 @@ namespace WaterBlob
             baseVisualScale = visualRoot.localScale;
             baseVisualLocalPosition = visualRoot.localPosition;
             visualRootIsSelf = visualRoot == transform;
+            visualScaleRatio = Vector2.one;
+            visualOffset = Vector2.zero;
+            delayedVelocity = rb.linearVelocity;
         }
 
         private void Start()
@@ -161,6 +193,12 @@ namespace WaterBlob
 
             CreateAndApplyZeroFrictionMaterial();
             previousVelocity = rb.linearVelocity;
+            delayedVelocity = rb.linearVelocity;
+        }
+
+        private void OnDisable()
+        {
+            ResetDeformationVisual();
         }
 
         private void Update()
@@ -178,14 +216,19 @@ namespace WaterBlob
 
             RaycastHit2D groundHit = default;
             bool hasGroundHit = CheckGround(out groundHit);
-            grounded = postJumpGroundIgnoreTimer <= 0f && hasGroundHit && IsGroundHitValid(groundHit);
+            float minGroundNormalY = Mathf.Cos(Mathf.Clamp(jumpMaxGroundAngle, 0f, 90f) * Mathf.Deg2Rad);
+            bool castGrounded = hasGroundHit && groundHit.collider != null && Mathf.Abs(groundHit.normal.y) >= minGroundNormalY;
+            bool contactGrounded = HasGroundContact(box, groundMask, minGroundNormalY) || HasGroundContact(coreCircle, groundMask, minGroundNormalY);
+            bool contactGroundedAnyLayer = HasGroundContactAny(box, minGroundNormalY) || HasGroundContactAny(coreCircle, minGroundNormalY);
+            bool blobPointGrounded = IsAnyBlobPointTouching(groundMask);
+            grounded = postJumpGroundIgnoreTimer <= 0f && (castGrounded || contactGrounded || blobPointGrounded || contactGroundedAnyLayer);
             bool touchingWall = CheckWall(out RaycastHit2D wallHit, out int wallDirection);
             bool touchingCeiling = CheckCeiling(out _, out float ceilingCompress);
             touchingWallThisStep = touchingWall;
             touchingWallDirection = wallDirection;
             touchingCeilingThisStep = touchingCeiling;
             ceilingCompression01 = ceilingCompress;
-            currentGroundNormal = groundHit.collider != null ? groundHit.normal : Vector2.up;
+            currentGroundNormal = castGrounded ? groundHit.normal : Vector2.up;
 
             if (isSliding && slideTimer <= 0f)
             {
@@ -244,7 +287,7 @@ namespace WaterBlob
             jumpPressed = false;
             groundedLastStep = grounded;
             previousVelY = rb.linearVelocity.y;
-            previousVelocity = rb.linearVelocity;
+            previousVelocity = delayedVelocity;
         }
 
         private void OnCollisionStay2D(Collision2D collision)
@@ -272,9 +315,10 @@ namespace WaterBlob
 
         private void ReadInput()
         {
-            float x = 0f;
+            float directX = 0f;
             float y = 0f;
-            bool jumpDown = false;
+            bool jumpPressedThisFrame = false;
+            bool jumpHeldNow = false;
             bool leftTapDown = false;
             bool rightTapDown = false;
 
@@ -284,11 +328,12 @@ namespace WaterBlob
             {
                 bool leftPressed = keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed;
                 bool rightPressed = keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed;
-                if (leftPressed) x -= 1f;
-                if (rightPressed) x += 1f;
+                if (leftPressed) directX -= 1f;
+                if (rightPressed) directX += 1f;
                 if (keyboard.wKey.isPressed || keyboard.zKey.isPressed || keyboard.upArrowKey.isPressed) y += 1f;
                 if (keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed) y -= 1f;
-                jumpDown |= keyboard.spaceKey.wasPressedThisFrame;
+                jumpPressedThisFrame |= keyboard.spaceKey.wasPressedThisFrame;
+                jumpHeldNow |= keyboard.spaceKey.isPressed;
                 leftTapDown |= keyboard.aKey.wasPressedThisFrame || keyboard.leftArrowKey.wasPressedThisFrame;
                 rightTapDown |= keyboard.dKey.wasPressedThisFrame || keyboard.rightArrowKey.wasPressedThisFrame;
             }
@@ -297,21 +342,37 @@ namespace WaterBlob
             if (gamepad != null)
             {
                 Vector2 stick = gamepad.leftStick.ReadValue();
-                if (Mathf.Abs(stick.x) > Mathf.Abs(x)) x = stick.x;
+                if (Mathf.Abs(stick.x) > Mathf.Abs(directX)) directX = stick.x;
                 if (Mathf.Abs(stick.y) > Mathf.Abs(y)) y = stick.y;
-                jumpDown |= gamepad.buttonSouth.wasPressedThisFrame;
+                jumpPressedThisFrame |= gamepad.buttonSouth.wasPressedThisFrame;
+                jumpHeldNow |= gamepad.buttonSouth.isPressed;
             }
 #else
-            x = Input.GetAxisRaw("Horizontal");
+            directX = Input.GetAxisRaw("Horizontal");
             y = Input.GetAxisRaw("Vertical");
-            jumpDown = Input.GetButtonDown("Jump");
+            jumpPressedThisFrame = Input.GetButtonDown("Jump");
+            jumpHeldNow = Input.GetButton("Jump");
             leftTapDown = Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow);
             rightTapDown = Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow);
 #endif
+            bool directJumpDown = jumpPressedThisFrame || (jumpHeldNow && !jumpHeldLastFrame);
+            jumpHeldLastFrame = jumpHeldNow;
 
-            inputX = Mathf.Clamp(x, -1f, 1f);
+            float resolvedX = directX;
+            bool resolvedJumpDown = directJumpDown;
+            if (blobInput != null)
+            {
+                resolvedX = blobInput.Move.x;
+                bool blobQueued = blobInput.ConsumeJumpPressed();
+                bool blobHeld = blobInput.JumpHeld;
+                bool blobHeldEdge = blobHeld && !blobJumpHeldLastFrame;
+                blobJumpHeldLastFrame = blobHeld;
+                resolvedJumpDown = blobQueued || blobHeldEdge || directJumpDown;
+            }
+
+            inputX = Mathf.Clamp(resolvedX, -1f, 1f);
             inputY = Mathf.Clamp(y, -1f, 1f);
-            if (jumpDown)
+            if (resolvedJumpDown)
             {
                 jumpPressed = true;
             }
@@ -473,7 +534,9 @@ namespace WaterBlob
             v.y = 0f;
             rb.linearVelocity = v;
 
-            rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+            Vector2 jumpImpulse = Vector2.up * jumpForce;
+            rb.AddForce(jumpImpulse, ForceMode2D.Impulse);
+            PropagateJumpImpulseToPoints(jumpImpulse, jumpPointImpulseScale);
             if (waterResource != null)
             {
                 waterResource.ConsumeJump();
@@ -493,7 +556,9 @@ namespace WaterBlob
             v.y = 0f;
             rb.linearVelocity = v;
 
-            rb.AddForce(new Vector2(away * wallJumpHorizontalForce, wallJumpVerticalForce), ForceMode2D.Impulse);
+            Vector2 wallImpulse = new Vector2(away * wallJumpHorizontalForce, wallJumpVerticalForce);
+            rb.AddForce(wallImpulse, ForceMode2D.Impulse);
+            PropagateJumpImpulseToPoints(wallImpulse, wallJumpPointImpulseScale);
             facingSign = away;
             if (waterResource != null)
             {
@@ -501,11 +566,38 @@ namespace WaterBlob
             }
         }
 
+        private void PropagateJumpImpulseToPoints(Vector2 impulse, float scale)
+        {
+            if (blobCharacter == null || blobCharacter.PointBodies == null || scale <= 0f)
+            {
+                return;
+            }
+
+            Vector2 pointImpulse = impulse * Mathf.Clamp01(scale);
+            for (int i = 0; i < blobCharacter.PointBodies.Count; i++)
+            {
+                Rigidbody2D pointBody = blobCharacter.PointBodies[i];
+                if (pointBody == null)
+                {
+                    continue;
+                }
+
+                Vector2 pv = pointBody.linearVelocity;
+                if (pv.y < 0f)
+                {
+                    pv.y = 0f;
+                    pointBody.linearVelocity = pv;
+                }
+
+                pointBody.AddForce(pointImpulse, ForceMode2D.Impulse);
+            }
+        }
+
         private void StopClimbing()
         {
             isClimbing = false;
             climbWallDirection = 0;
-            // Restore gravity — use blob's value if present, otherwise our own
+            // Restore gravity: use blob's value if present, otherwise our own.
             rb.gravityScale = (blobCharacter != null) ? blobCharacter.gravityScale : gravityWhenNotClimbing;
             SetBlobCharacterEnabled(true);
         }
@@ -561,18 +653,27 @@ namespace WaterBlob
 
         private void ApplySoftBodyDeformation()
         {
+            float dt = Mathf.Max(0.0001f, Time.fixedDeltaTime);
             if (!groundedLastStep && grounded && -previousVelY >= landingMinImpactSpeed)
             {
                 float impact = Mathf.Clamp01((-previousVelY - landingMinImpactSpeed) / Mathf.Max(0.01f, landingMinImpactSpeed));
                 landingPulse = Mathf.Clamp01(0.55f + impact);
             }
 
-            landingPulse = Mathf.MoveTowards(landingPulse, 0f, 3.2f * Time.fixedDeltaTime);
-            jumpPulse = Mathf.MoveTowards(jumpPulse, 0f, 7f * Time.fixedDeltaTime);
-            wallDetachPulse = Mathf.MoveTowards(wallDetachPulse, 0f, 6f * Time.fixedDeltaTime);
+            landingPulse = Mathf.MoveTowards(landingPulse, 0f, 3.2f * dt);
+            jumpPulse = Mathf.MoveTowards(jumpPulse, 0f, 7f * dt);
+            wallDetachPulse = Mathf.MoveTowards(wallDetachPulse, 0f, 6f * dt);
 
-            Vector2 velocity = rb.linearVelocity;
-            float dt = Mathf.Max(0.0001f, Time.fixedDeltaTime);
+            delayedVelocity = Vector2.SmoothDamp(
+                delayedVelocity,
+                rb.linearVelocity,
+                ref delayedVelocityVelocity,
+                Mathf.Max(0.0001f, movementResponseDelay),
+                Mathf.Infinity,
+                dt
+            );
+
+            Vector2 velocity = delayedVelocity;
             accelerationSignal = Mathf.MoveTowards(accelerationSignal, (velocity.x - previousVelocity.x) / dt, acceleration * 2.8f * dt);
 
             float speed01 = Mathf.Clamp01(Mathf.Abs(velocity.x) / Mathf.Max(0.01f, moveSpeed));
@@ -625,6 +726,20 @@ namespace WaterBlob
             horizontalSpread += wallDetachStretch * wallDetachPulse;
             verticalStretch += wallDetachStretch * wallDetachPulse * 0.32f;
 
+            float wobbleTarget = Mathf.Clamp(
+                Mathf.Clamp(accelerationSignal / Mathf.Max(0.01f, acceleration * 2f), -1f, 1f) * accelerationWobble
+                + landingPulse * impactWobble
+                + wallDetachPulse * (impactWobble * 0.4f),
+                -maxWobble,
+                maxWobble
+            );
+            SpringStep(ref wobbleState, ref wobbleVelocity, wobbleTarget, wobbleSpring, wobbleDamping, dt);
+            wobbleState = Mathf.Clamp(wobbleState, -maxWobble, maxWobble);
+
+            horizontalSpread += Mathf.Abs(wobbleState) * 0.75f;
+            verticalStretch += wobbleState;
+            verticalCompress += Mathf.Max(0f, -wobbleState) * 0.55f;
+
             if (touchingCeilingThisStep)
             {
                 float damp = Mathf.Lerp(1f, ceilingCompressionDampen, ceilingCompression01);
@@ -641,27 +756,98 @@ namespace WaterBlob
                 targetSign = 1f;
             }
 
-            Vector3 targetScale = new(Mathf.Max(0.08f, targetXAbs) * targetSign, Mathf.Max(0.08f, targetY), baseVisualScale.z);
+            Vector2 targetScaleRatio = new(
+                Mathf.Max(0.08f, targetXAbs) / Mathf.Max(0.0001f, Mathf.Abs(baseVisualScale.x)),
+                Mathf.Max(0.08f, targetY) / Mathf.Max(0.0001f, baseVisualScale.y)
+            );
 
             Vector3 targetPos = baseVisualLocalPosition;
-            if (!visualRootIsSelf)
-            {
-                float momentumSign = Mathf.Abs(velocity.x) > 0.1f ? Mathf.Sign(velocity.x) : Mathf.Sign(facingSign);
-                float momentumOffset = visualMomentumOffset * speed01;
-                float accelOffset = visualMomentumOffset * 0.7f * Mathf.Clamp(accelerationSignal / Mathf.Max(0.01f, acceleration * 2f), -1f, 1f);
-                float wallOffset = wall01 > 0f ? 0.04f * Mathf.Sign(touchingWallDirection == 0 ? climbWallDirection : touchingWallDirection) : 0f;
-                float detachOffset = 0.06f * wallDetachPulse * wallDetachDirection;
-                float groundSink = (idleGroundSquash * idle01 + landingSquash * landingPulse * 0.5f) * 0.2f;
+            float momentumSign = Mathf.Abs(velocity.x) > 0.1f ? Mathf.Sign(velocity.x) : Mathf.Sign(facingSign);
+            float momentumOffset = visualMomentumOffset * speed01;
+            float accelOffset = visualMomentumOffset * 0.7f * Mathf.Clamp(accelerationSignal / Mathf.Max(0.01f, acceleration * 2f), -1f, 1f);
+            float wallOffset = wall01 > 0f ? 0.04f * Mathf.Sign(touchingWallDirection == 0 ? climbWallDirection : touchingWallDirection) : 0f;
+            float detachOffset = 0.06f * wallDetachPulse * wallDetachDirection;
+            float groundSink = (idleGroundSquash * idle01 + landingSquash * landingPulse * 0.5f) * 0.2f;
 
-                targetPos.x += momentumOffset * momentumSign + accelOffset + wallOffset - detachOffset;
-                targetPos.y -= groundSink;
+            targetPos.x += momentumOffset * momentumSign + accelOffset + wallOffset - detachOffset;
+            targetPos.y -= groundSink;
+
+            Vector2 targetOffset = new(
+                targetPos.x - baseVisualLocalPosition.x,
+                targetPos.y - baseVisualLocalPosition.y
+            );
+
+            SpringStep(ref visualScaleRatio.x, ref visualScaleVelocity.x, targetScaleRatio.x, deformationSpring, deformationDamping, dt);
+            SpringStep(ref visualScaleRatio.y, ref visualScaleVelocity.y, targetScaleRatio.y, deformationSpring, deformationDamping, dt);
+            SpringStep(ref visualOffset.x, ref visualOffsetVelocity.x, targetOffset.x, deformationSpring * 0.75f, deformationDamping, dt);
+            SpringStep(ref visualOffset.y, ref visualOffsetVelocity.y, targetOffset.y, deformationSpring * 0.75f, deformationDamping, dt);
+
+            if (visualRootIsSelf && blobRenderer != null)
+            {
+                blobRenderer.SetMotionVisual(visualScaleRatio, visualOffset);
+                return;
             }
 
-            visualRoot.localScale = Vector3.Lerp(visualRoot.localScale, targetScale, deformLerpSpeed * Time.fixedDeltaTime);
+            if (blobRenderer != null)
+            {
+                blobRenderer.ResetMotionVisual();
+            }
+
+            Vector3 targetScale = new(
+                Mathf.Max(0.08f, Mathf.Abs(baseVisualScale.x) * visualScaleRatio.x) * targetSign,
+                Mathf.Max(0.08f, baseVisualScale.y * visualScaleRatio.y),
+                baseVisualScale.z
+            );
+
+            visualRoot.localScale = targetScale;
             if (!visualRootIsSelf)
             {
-                visualRoot.localPosition = Vector3.Lerp(visualRoot.localPosition, targetPos, deformLerpSpeed * Time.fixedDeltaTime);
+                visualRoot.localPosition = baseVisualLocalPosition + (Vector3)visualOffset;
             }
+        }
+
+        private void ResetDeformationVisual()
+        {
+            if (blobRenderer != null)
+            {
+                blobRenderer.ResetMotionVisual();
+            }
+
+            if (visualRoot == null)
+            {
+                return;
+            }
+
+            Vector3 resetScale = baseVisualScale;
+            if (visualRootIsSelf)
+            {
+                float sign = facingSign >= 0f ? 1f : -1f;
+                resetScale.x = Mathf.Abs(resetScale.x) * sign;
+            }
+
+            visualRoot.localScale = resetScale;
+            if (!visualRootIsSelf)
+            {
+                visualRoot.localPosition = baseVisualLocalPosition;
+            }
+
+            visualScaleRatio = Vector2.one;
+            visualScaleVelocity = Vector2.zero;
+            visualOffset = Vector2.zero;
+            visualOffsetVelocity = Vector2.zero;
+            wobbleState = 0f;
+            wobbleVelocity = 0f;
+        }
+
+        private static void SpringStep(ref float current, ref float velocity, float target, float spring, float damping, float dt)
+        {
+            float s = Mathf.Max(0f, spring);
+            float d = Mathf.Max(0f, damping);
+            float displacement = target - current;
+
+            velocity += displacement * s * dt;
+            velocity *= Mathf.Exp(-d * dt);
+            current += velocity * dt;
         }
 
         private bool CheckGround(out RaycastHit2D hit)
@@ -684,6 +870,88 @@ namespace WaterBlob
 
             float minGroundNormalY = Mathf.Cos(maxGroundAngle * Mathf.Deg2Rad);
             return hit.normal.y >= minGroundNormalY;
+        }
+
+        private bool HasGroundContact(Collider2D sourceCollider, LayerMask mask, float minGroundNormalY)
+        {
+            if (sourceCollider == null)
+            {
+                return false;
+            }
+
+            int count = sourceCollider.GetContacts(groundContactBuffer);
+            for (int i = 0; i < count; i++)
+            {
+                ContactPoint2D contact = groundContactBuffer[i];
+                Collider2D other = contact.collider;
+                if (other == null || !IsLayerInMask(other.gameObject.layer, mask))
+                {
+                    continue;
+                }
+
+                if (other.attachedRigidbody == rb)
+                {
+                    continue;
+                }
+
+                if (Mathf.Abs(contact.normal.y) >= minGroundNormalY)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool HasGroundContactAny(Collider2D sourceCollider, float minGroundNormalY)
+        {
+            if (sourceCollider == null)
+            {
+                return false;
+            }
+
+            int count = sourceCollider.GetContacts(groundContactBuffer);
+            for (int i = 0; i < count; i++)
+            {
+                ContactPoint2D contact = groundContactBuffer[i];
+                Collider2D other = contact.collider;
+                if (other == null || other.isTrigger || other.attachedRigidbody == rb)
+                {
+                    continue;
+                }
+
+                if (Mathf.Abs(contact.normal.y) >= minGroundNormalY)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool IsAnyBlobPointTouching(LayerMask mask)
+        {
+            if (blobCharacter == null || blobCharacter.PointBodies == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < blobCharacter.PointBodies.Count; i++)
+            {
+                Rigidbody2D pointBody = blobCharacter.PointBodies[i];
+                if (pointBody == null)
+                {
+                    continue;
+                }
+
+                Collider2D pointCollider = pointBody.GetComponent<Collider2D>();
+                if (pointCollider != null && pointCollider.IsTouchingLayers(mask))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private bool CheckWall(out RaycastHit2D hit, out int wallDirection)
