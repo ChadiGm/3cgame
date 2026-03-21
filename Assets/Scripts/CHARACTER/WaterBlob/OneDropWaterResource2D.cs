@@ -1,5 +1,7 @@
+using System;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace WaterBlob
 {
@@ -7,6 +9,10 @@ namespace WaterBlob
     [RequireComponent(typeof(Rigidbody2D))]
     public class OneDropWaterResource2D : MonoBehaviour
     {
+        [Header("Health")]
+        [SerializeField, Min(1)] private int maxHealthPoints = 4;
+        [SerializeField, Min(0f)] private float gameRestartDelay = 0.6f;
+
         [Header("Water Resource")]
         [SerializeField, Min(1f)] private float maxWater = 100f;
         [SerializeField, Min(0f)] private float moveDrainPerSecond = 3.5f;
@@ -19,30 +25,36 @@ namespace WaterBlob
         [Header("Death")]
         [SerializeField] private GameObject deathVaporEffectPrefab;
         [SerializeField, Min(0f)] private float disableDelay = 0.15f;
-        [SerializeField] private bool respawnOnDeath = true;
         [SerializeField, Min(0f)] private float respawnDelay = 1.2f;
         [SerializeField] private bool useCheckpointManager = true;
         [SerializeField] private CheckpointManager2D checkpointManager;
         [SerializeField] private bool debugRespawnLogs = false;
 
         private float currentWater;
+        private int currentHealthPoints;
         private bool dead;
         private Rigidbody2D rb;
         private Vector3 initialSpawnPosition;
         private Quaternion initialSpawnRotation;
 
         public float WaterRatio => Mathf.Clamp01(currentWater / Mathf.Max(0.0001f, maxWater));
+        public int CurrentHealthPoints => currentHealthPoints;
+        public int MaxHealthPoints => maxHealthPoints;
+        public event Action<int, int> HealthChanged;
 
 
         private void Awake()
         {
             rb = GetComponent<Rigidbody2D>();
+            maxHealthPoints = Mathf.Max(1, maxHealthPoints);
+            gameRestartDelay = Mathf.Max(0f, gameRestartDelay);
             maxWater = Mathf.Max(1f, maxWater);
             moveDrainPerSecond = Mathf.Max(0f, moveDrainPerSecond);
             jumpDrain = Mathf.Max(0f, jumpDrain);
             slideDrain = Mathf.Max(0f, slideDrain);
             shootDrain = Mathf.Max(0f, shootDrain);
             damageDrain = Mathf.Max(0f, damageDrain);
+            currentHealthPoints = maxHealthPoints;
             currentWater = maxWater;
             initialSpawnPosition = transform.position;
             initialSpawnRotation = transform.rotation;
@@ -55,6 +67,9 @@ namespace WaterBlob
 
                 checkpointManager.RegisterPlayer(transform);
             }
+
+            EnsureHealthUI();
+            NotifyHealthChanged();
         }
 
         public bool ConsumeShoot()
@@ -177,13 +192,17 @@ namespace WaterBlob
                 renderers[i].enabled = false;
             }
 
-            if (!respawnOnDeath)
+            ConsumeHealthOnDeath();
+
+            if (currentHealthPoints > 0)
             {
+                yield return new WaitForSeconds(respawnDelay);
+                RespawnPlayer(controller, attack);
                 yield break;
             }
 
-            yield return new WaitForSeconds(respawnDelay);
-            RespawnPlayer(controller, attack);
+            yield return new WaitForSeconds(gameRestartDelay);
+            RestartGameFromBeginning();
         }
 
         private void RespawnPlayer(OneDropController2D controller, OneDropAttack2D attack)
@@ -256,6 +275,46 @@ namespace WaterBlob
 
             currentWater = maxWater;
             dead = false;
+        }
+
+        private void ConsumeHealthOnDeath()
+        {
+            currentHealthPoints = Mathf.Max(0, currentHealthPoints - 1);
+            NotifyHealthChanged();
+        }
+
+        private void NotifyHealthChanged()
+        {
+            HealthChanged?.Invoke(currentHealthPoints, maxHealthPoints);
+        }
+
+        private void EnsureHealthUI()
+        {
+            if (GetComponent<OneDropHealthBlobUI2D>() == null)
+            {
+                gameObject.AddComponent<OneDropHealthBlobUI2D>();
+            }
+        }
+
+        private static void RestartGameFromBeginning()
+        {
+            Time.timeScale = 1f;
+
+            if (SceneManager.sceneCountInBuildSettings > 0)
+            {
+                SceneManager.LoadScene(0);
+                return;
+            }
+
+            Scene activeScene = SceneManager.GetActiveScene();
+            if (activeScene.buildIndex >= 0)
+            {
+                SceneManager.LoadScene(activeScene.buildIndex);
+            }
+            else
+            {
+                SceneManager.LoadScene(activeScene.name);
+            }
         }
 
         private void SpawnDeathVapor(Vector3 position)
