@@ -88,15 +88,7 @@ namespace WaterBlob
             currentWater = maxWater;
             initialSpawnPosition = transform.position;
             initialSpawnRotation = transform.rotation;
-            if (useCheckpointManager)
-            {
-                if (checkpointManager == null)
-                {
-                    checkpointManager = CheckpointManager2D.EnsureInstance();
-                }
-
-                checkpointManager.RegisterPlayer(transform);
-            }
+            ResolveCheckpointManagerAndRegisterPlayer();
 
             EnsureHealthUI();
             EnsureGameFlowSystem();
@@ -246,6 +238,7 @@ namespace WaterBlob
             Vector3 respawnPosition = initialSpawnPosition;
             Quaternion respawnRotation = initialSpawnRotation;
 
+            ResolveCheckpointManagerAndRegisterPlayer();
             if (useCheckpointManager && checkpointManager != null && checkpointManager.TryGetRespawn(out Vector3 cpPos, out Quaternion cpRot))
             {
                 respawnPosition = cpPos;
@@ -311,6 +304,34 @@ namespace WaterBlob
 
             currentWater = maxWater;
             dead = false;
+        }
+
+        private void ResolveCheckpointManagerAndRegisterPlayer()
+        {
+            if (!useCheckpointManager)
+            {
+                return;
+            }
+
+            if (checkpointManager == null)
+            {
+                checkpointManager = CheckpointManager2D.Instance;
+            }
+
+            if (checkpointManager == null)
+            {
+                checkpointManager = FindFirstObjectByType<CheckpointManager2D>(FindObjectsInactive.Include);
+            }
+
+            if (checkpointManager == null)
+            {
+                checkpointManager = CheckpointManager2D.EnsureInstance();
+            }
+
+            if (checkpointManager != null)
+            {
+                checkpointManager.RegisterPlayer(transform);
+            }
         }
 
         private void ConsumeHealthOnDeath()

@@ -135,10 +135,51 @@ namespace WaterBlob
 
             if (requirePlayerController)
             {
-                return other.GetComponentInParent<OneDropController2D>() != null;
+                if (other.GetComponentInParent<OneDropController2D>() != null)
+                {
+                    return true;
+                }
+
+                return IsLinkedToPlayerBlobPoint(other);
             }
 
-            return other.GetComponentInParent<OneDropWaterResource2D>() != null;
+            if (other.GetComponentInParent<OneDropWaterResource2D>() != null)
+            {
+                return true;
+            }
+
+            return IsLinkedToPlayerBlobPoint(other);
+        }
+
+        private static bool IsLinkedToPlayerBlobPoint(Collider2D other)
+        {
+            Rigidbody2D body = other.attachedRigidbody;
+            if (body == null)
+            {
+                return false;
+            }
+
+            SpringJoint2D[] joints = body.GetComponents<SpringJoint2D>();
+            for (int i = 0; i < joints.Length; i++)
+            {
+                SpringJoint2D joint = joints[i];
+                if (joint == null || joint.connectedBody == null)
+                {
+                    continue;
+                }
+
+                if (joint.connectedBody.GetComponent<OneDropController2D>() != null)
+                {
+                    return true;
+                }
+
+                if (joint.connectedBody.GetComponent<OneDropWaterResource2D>() != null)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void OnDrawGizmos()
