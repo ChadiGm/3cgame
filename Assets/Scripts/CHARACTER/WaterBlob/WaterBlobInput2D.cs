@@ -28,6 +28,15 @@ namespace WaterBlob
 
         private void Update()
         {
+            if (OneDropGameManager2D.IsGameplayInputBlocked)
+            {
+                smoothedMoveX = 0f;
+                jumpQueued = false;
+                Move = Vector2.zero;
+                JumpHeld = false;
+                return;
+            }
+
             ReadInput();
         }
 

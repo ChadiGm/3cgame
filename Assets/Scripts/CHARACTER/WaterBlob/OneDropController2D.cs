@@ -203,6 +203,16 @@ namespace WaterBlob
 
         private void Update()
         {
+            if (OneDropGameManager2D.IsGameplayInputBlocked)
+            {
+                inputX = 0f;
+                inputY = 0f;
+                jumpPressed = false;
+                jumpHeldLastFrame = false;
+                blobJumpHeldLastFrame = false;
+                return;
+            }
+
             ReadInput();
         }
 

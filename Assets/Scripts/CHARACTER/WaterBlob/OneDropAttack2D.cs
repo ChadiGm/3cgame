@@ -70,6 +70,11 @@ namespace WaterBlob
 
         private void Update()
         {
+            if (OneDropGameManager2D.IsGameplayInputBlocked)
+            {
+                return;
+            }
+
             cooldownTimer = Mathf.Max(0f, cooldownTimer - Time.deltaTime);
             touchInvulnerabilityTimer = Mathf.Max(0f, touchInvulnerabilityTimer - Time.deltaTime);
             if (ReadShootPressedThisFrame())

@@ -41,6 +41,36 @@ namespace WaterBlob
         public int CurrentHealthPoints => currentHealthPoints;
         public int MaxHealthPoints => maxHealthPoints;
         public event Action<int, int> HealthChanged;
+        public event Action FinalHealthDepleted;
+
+        private void Reset()
+        {
+            if (Application.isPlaying)
+            {
+                return;
+            }
+
+            EnsureEditorUiAndFlowComponents();
+        }
+
+        private void OnValidate()
+        {
+            maxHealthPoints = Mathf.Max(1, maxHealthPoints);
+            gameRestartDelay = Mathf.Max(0f, gameRestartDelay);
+            maxWater = Mathf.Max(1f, maxWater);
+            moveDrainPerSecond = Mathf.Max(0f, moveDrainPerSecond);
+            jumpDrain = Mathf.Max(0f, jumpDrain);
+            slideDrain = Mathf.Max(0f, slideDrain);
+            shootDrain = Mathf.Max(0f, shootDrain);
+            damageDrain = Mathf.Max(0f, damageDrain);
+
+            if (Application.isPlaying)
+            {
+                return;
+            }
+
+            EnsureEditorUiAndFlowComponents();
+        }
 
 
         private void Awake()
@@ -69,6 +99,7 @@ namespace WaterBlob
             }
 
             EnsureHealthUI();
+            EnsureGameFlowSystem();
             NotifyHealthChanged();
         }
 
@@ -201,8 +232,13 @@ namespace WaterBlob
                 yield break;
             }
 
-            yield return new WaitForSeconds(gameRestartDelay);
-            RestartGameFromBeginning();
+            bool hasFinalDeathListeners = FinalHealthDepleted != null;
+            FinalHealthDepleted?.Invoke();
+            if (!hasFinalDeathListeners)
+            {
+                yield return new WaitForSeconds(gameRestartDelay);
+                RestartGameFromBeginning();
+            }
         }
 
         private void RespawnPlayer(OneDropController2D controller, OneDropAttack2D attack)
@@ -293,6 +329,37 @@ namespace WaterBlob
             if (GetComponent<OneDropHealthBlobUI2D>() == null)
             {
                 gameObject.AddComponent<OneDropHealthBlobUI2D>();
+            }
+        }
+
+        private void EnsureGameFlowSystem()
+        {
+            if (FindObjectsByType<OneDropGameManager2D>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length == 0)
+            {
+                gameObject.AddComponent<OneDropGameManager2D>();
+            }
+
+            if (FindObjectsByType<OneDropGameUIManager2D>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length == 0)
+            {
+                gameObject.AddComponent<OneDropGameUIManager2D>();
+            }
+        }
+
+        private void EnsureEditorUiAndFlowComponents()
+        {
+            if (GetComponent<OneDropHealthBlobUI2D>() == null)
+            {
+                gameObject.AddComponent<OneDropHealthBlobUI2D>();
+            }
+
+            if (GetComponent<OneDropGameManager2D>() == null)
+            {
+                gameObject.AddComponent<OneDropGameManager2D>();
+            }
+
+            if (GetComponent<OneDropGameUIManager2D>() == null)
+            {
+                gameObject.AddComponent<OneDropGameUIManager2D>();
             }
         }
 
