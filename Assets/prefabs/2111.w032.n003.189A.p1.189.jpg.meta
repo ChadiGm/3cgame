@@ -113,12 +113,12 @@ TextureImporter:
       name: 2111.w032.n003.189A.p1.189_0
       rect:
         serializedVersion: 2
-        x: 0
+        x: 4671
         y: 0
-        width: 7001
+        width: 2330
         height: 2334
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -140,7 +140,7 @@ TextureImporter:
         width: 2324
         height: 2334
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -149,6 +149,28 @@ TextureImporter:
       bones: []
       spriteID: 4c1e672ae578b664d9f1b5a1e6f9a898
       internalID: 167614941
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 2111.w032.n003.189A.p1.189_2
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 2334
+        height: 2334
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f5a90f61267fa444fb99d25f189c64d8
+      internalID: -905155621
       vertices: []
       indices: 
       edges: []
@@ -171,6 +193,7 @@ TextureImporter:
     nameFileIdTable:
       2111.w032.n003.189A.p1.189_0: 905326556
       2111.w032.n003.189A.p1.189_1: 167614941
+      2111.w032.n003.189A.p1.189_2: -905155621
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
