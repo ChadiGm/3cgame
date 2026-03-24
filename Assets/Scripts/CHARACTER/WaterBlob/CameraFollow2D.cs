@@ -1,11 +1,21 @@
 using UnityEngine;
 using UnityEngine.Events;
+using System.Collections.Generic;
 
 namespace WaterBlob
 {
     [DisallowMultipleComponent]
     public class CameraFollow2D : MonoBehaviour
     {
+#pragma warning disable CS0649
+        [System.Serializable]
+        private class EarthquakeZone
+        {
+            public Transform start;
+            public Transform end;
+        }
+#pragma warning restore CS0649
+
         [SerializeField] private Transform target;
         [SerializeField] private Vector3 offset = new(0f, 1.2f, -10f);
         [SerializeField, Min(0f)] private float smoothTime = 0.13f;
@@ -20,6 +30,8 @@ namespace WaterBlob
         [SerializeField] private Transform earthquakeZoneStart;
         [Tooltip("Assign end of zone (X axis).")]
         [SerializeField] private Transform earthquakeZoneEnd;
+        [Tooltip("Add more zones here (Zone 2, Zone 3, ...).")]
+        [SerializeField] private List<EarthquakeZone> additionalZones = new();
         [SerializeField] private bool useDistanceFalloff = true;
 
         [Header("Earthquake Shake")]
@@ -140,34 +152,67 @@ namespace WaterBlob
         private float GetZoneProximity(float playerX, out bool isInside)
         {
             isInside = false;
-            if (!enableEarthquake || earthquakeZoneStart == null || earthquakeZoneEnd == null)
+            if (!enableEarthquake)
             {
                 return 0f;
             }
 
-            float startX = earthquakeZoneStart.position.x;
-            float endX = earthquakeZoneEnd.position.x;
+            float bestProximity = 0f;
+            bool insideAny = false;
+
+            // Legacy single zone (kept for backward compatibility with existing scene setup)
+            EvaluateZone(earthquakeZoneStart, earthquakeZoneEnd, playerX, ref bestProximity, ref insideAny);
+
+            if (additionalZones != null)
+            {
+                for (int i = 0; i < additionalZones.Count; i++)
+                {
+                    EarthquakeZone zone = additionalZones[i];
+                    EvaluateZone(zone.start, zone.end, playerX, ref bestProximity, ref insideAny);
+                }
+            }
+
+            isInside = insideAny;
+            return bestProximity;
+        }
+
+        private void EvaluateZone(Transform start, Transform end, float playerX, ref float bestProximity, ref bool insideAny)
+        {
+            if (start == null || end == null)
+            {
+                return;
+            }
+
+            float startX = start.position.x;
+            float endX = end.position.x;
             float minX = Mathf.Min(startX, endX);
             float maxX = Mathf.Max(startX, endX);
             if (Mathf.Approximately(minX, maxX))
             {
-                return 0f;
+                return;
             }
 
-            isInside = playerX >= minX && playerX <= maxX;
-            if (!isInside)
+            bool insideThisZone = playerX >= minX && playerX <= maxX;
+            if (!insideThisZone)
             {
-                return 0f;
+                return;
             }
+
+            insideAny = true;
 
             if (!useDistanceFalloff)
             {
-                return 1f;
+                bestProximity = 1f;
+                return;
             }
 
             float centerX = (minX + maxX) * 0.5f;
             float halfWidth = Mathf.Max(0.0001f, (maxX - minX) * 0.5f);
-            return 1f - Mathf.Clamp01(Mathf.Abs(playerX - centerX) / halfWidth);
+            float proximity = 1f - Mathf.Clamp01(Mathf.Abs(playerX - centerX) / halfWidth);
+            if (proximity > bestProximity)
+            {
+                bestProximity = proximity;
+            }
         }
 
         private void HandleZoneState(bool nowInside)

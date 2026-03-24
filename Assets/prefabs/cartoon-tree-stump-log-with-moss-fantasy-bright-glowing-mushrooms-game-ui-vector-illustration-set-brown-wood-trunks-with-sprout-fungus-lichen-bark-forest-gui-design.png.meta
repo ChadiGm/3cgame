@@ -105,7 +105,7 @@ TextureImporter:
         width: 331
         height: 342
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -114,6 +114,28 @@ TextureImporter:
       bones: []
       spriteID: 3531ec41d6fe8624db51427ef0b4dd7e
       internalID: -1323701908
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: cartoon-tree-stump-log-with-moss-fantasy-bright-glowing-mushrooms-game-ui-vector-illustration-set-brown-wood-trunks-with-sprout-fungus-lichen-bark-forest-gui-design_1
+      rect:
+        serializedVersion: 2
+        x: 1168
+        y: 115
+        width: 356
+        height: 294
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9c64beef5c225be4cb9e03bc403f2120
+      internalID: -1308463976
       vertices: []
       indices: 
       edges: []
@@ -133,6 +155,7 @@ TextureImporter:
       entries: []
     nameFileIdTable:
       cartoon-tree-stump-log-with-moss-fantasy-bright-glowing-mushrooms-game-ui-vector-illustration-set-brown-wood-trunks-with-sprout-fungus-lichen-bark-forest-gui-design_0: -1323701908
+      cartoon-tree-stump-log-with-moss-fantasy-bright-glowing-mushrooms-game-ui-vector-illustration-set-brown-wood-trunks-with-sprout-fungus-lichen-bark-forest-gui-design_1: -1308463976
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
