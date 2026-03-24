@@ -11,6 +11,7 @@ namespace WaterBlob
         [Header("References")]
         [SerializeField] private OneDropWaterResource2D healthSource;
         [SerializeField] private Canvas targetCanvas;
+        [SerializeField] private WaterBlobMeshRenderer2D playerVisual;
 
         [Header("Layout")]
         [SerializeField] private Vector2 hudOffset = new(28f, -28f);
@@ -18,9 +19,14 @@ namespace WaterBlob
         [SerializeField, Min(0f)] private float iconSpacing = 8f;
 
         [Header("Style")]
-        [SerializeField] private Color activeTint = new(1f, 1f, 1f, 1f);
+        [SerializeField] private bool syncColorWithPlayer = true;
+        [SerializeField] private Color activeTint = new(0.19f, 0.72f, 1f, 1f);
         [SerializeField] private Color lostTint = new(0.55f, 0.72f, 0.82f, 0.85f);
         [SerializeField, Range(0f, 1f)] private float lostAlpha = 0.2f;
+
+        [Header("Inside Fill")]
+        [SerializeField] private bool syncInsideFillWithWater = true;
+        [SerializeField, Range(0f, 1f)] private float lostFillAmount = 0.12f;
 
         [Header("Juicy Animation")]
         [SerializeField, Min(0.05f)] private float loseAnimDuration = 0.34f;
@@ -31,15 +37,18 @@ namespace WaterBlob
         private readonly List<BlobIcon> icons = new();
         private RectTransform root;
         private int displayedHealth = -1;
+        private float currentInsideFill = 1f;
 
         private static Sprite cachedBlobSprite;
 
         private sealed class BlobIcon
         {
             public RectTransform Rect;
-            public Image Image;
+            public Image FrameImage;
+            public Image FillImage;
             public CanvasGroup Group;
             public Coroutine Animation;
+            public bool IsActive;
         }
 
         private void Awake()
@@ -53,12 +62,18 @@ namespace WaterBlob
             EnsureUi();
             Subscribe();
             RefreshInstant();
+            SyncStyleAndFill(forceApply: true);
         }
 
         private void OnDisable()
         {
             Unsubscribe();
             StopAllIconAnimations();
+        }
+
+        private void LateUpdate()
+        {
+            SyncStyleAndFill(forceApply: false);
         }
 
         private void Subscribe()
@@ -87,6 +102,16 @@ namespace WaterBlob
             if (healthSource == null)
             {
                 healthSource = GetComponentInParent<OneDropWaterResource2D>();
+            }
+
+            if (playerVisual == null)
+            {
+                playerVisual = GetComponent<WaterBlobMeshRenderer2D>();
+            }
+
+            if (playerVisual == null)
+            {
+                playerVisual = GetComponentInParent<WaterBlobMeshRenderer2D>();
             }
         }
 
@@ -204,11 +229,11 @@ namespace WaterBlob
             rect.pivot = new Vector2(0.5f, 0.5f);
             rect.sizeDelta = Vector2.one * iconSize;
 
-            Image image = iconGo.GetComponent<Image>();
-            image.sprite = GetBlobSprite();
-            image.type = Image.Type.Simple;
-            image.preserveAspect = true;
-            image.color = activeTint;
+            Image frameImage = iconGo.GetComponent<Image>();
+            frameImage.sprite = GetBlobSprite();
+            frameImage.type = Image.Type.Simple;
+            frameImage.preserveAspect = true;
+            frameImage.color = new Color(1f, 1f, 1f, 0.24f);
 
             Shadow shadow = iconGo.GetComponent<Shadow>();
             shadow.effectColor = new Color(0.02f, 0.18f, 0.26f, 0.35f);
@@ -218,11 +243,32 @@ namespace WaterBlob
             CanvasGroup group = iconGo.GetComponent<CanvasGroup>();
             group.alpha = 1f;
 
+            GameObject fillGo = new("Fill", typeof(RectTransform), typeof(Image));
+            RectTransform fillRect = fillGo.GetComponent<RectTransform>();
+            fillRect.SetParent(rect, false);
+            fillRect.anchorMin = Vector2.zero;
+            fillRect.anchorMax = Vector2.one;
+            fillRect.offsetMin = Vector2.zero;
+            fillRect.offsetMax = Vector2.zero;
+            fillRect.localScale = Vector3.one;
+
+            Image fillImage = fillGo.GetComponent<Image>();
+            fillImage.sprite = GetBlobSprite();
+            fillImage.type = Image.Type.Filled;
+            fillImage.fillMethod = Image.FillMethod.Vertical;
+            fillImage.fillOrigin = (int)Image.OriginVertical.Bottom;
+            fillImage.fillClockwise = true;
+            fillImage.fillAmount = 1f;
+            fillImage.preserveAspect = true;
+            fillImage.color = activeTint;
+
             return new BlobIcon
             {
                 Rect = rect,
-                Image = image,
-                Group = group
+                FrameImage = frameImage,
+                FillImage = fillImage,
+                Group = group,
+                IsActive = true
             };
         }
 
@@ -265,6 +311,7 @@ namespace WaterBlob
                 }
 
                 displayedHealth = clampedCurrent;
+                SyncStyleAndFill(forceApply: true);
                 return;
             }
 
@@ -288,6 +335,7 @@ namespace WaterBlob
             }
 
             displayedHealth = clampedCurrent;
+            SyncStyleAndFill(forceApply: true);
         }
 
         private void PlayLoseAnimation(BlobIcon icon)
@@ -319,7 +367,9 @@ namespace WaterBlob
                 icon.Rect.localScale = Vector3.one * (burst * shrink);
                 icon.Rect.localRotation = Quaternion.Euler(0f, 0f, wobble);
                 icon.Group.alpha = alpha;
-                icon.Image.color = Color.Lerp(activeTint, lostTint, Mathf.SmoothStep(0f, 1f, t));
+                icon.FillImage.color = Color.Lerp(activeTint, lostTint, Mathf.SmoothStep(0f, 1f, t));
+                icon.FrameImage.color = Color.Lerp(new Color(1f, 1f, 1f, 0.24f), new Color(1f, 1f, 1f, 0.15f), t);
+                icon.FillImage.fillAmount = Mathf.Lerp(currentInsideFill, lostFillAmount, t);
 
                 yield return null;
             }
@@ -343,7 +393,9 @@ namespace WaterBlob
                 icon.Rect.localScale = Vector3.one * pop;
                 icon.Rect.localRotation = Quaternion.Euler(0f, 0f, wobble);
                 icon.Group.alpha = Mathf.Lerp(lostAlpha, 1f, t);
-                icon.Image.color = Color.Lerp(lostTint, activeTint, t);
+                icon.FillImage.color = Color.Lerp(lostTint, activeTint, t);
+                icon.FrameImage.color = Color.Lerp(new Color(1f, 1f, 1f, 0.15f), new Color(1f, 1f, 1f, 0.24f), t);
+                icon.FillImage.fillAmount = Mathf.Lerp(lostFillAmount, currentInsideFill, t);
 
                 yield return null;
             }
@@ -367,18 +419,90 @@ namespace WaterBlob
 
         private void SetIconAsActive(BlobIcon icon)
         {
+            icon.IsActive = true;
             icon.Rect.localScale = Vector3.one;
             icon.Rect.localRotation = Quaternion.identity;
             icon.Group.alpha = 1f;
-            icon.Image.color = activeTint;
+            icon.FillImage.color = activeTint;
+            icon.FillImage.fillAmount = 1f;
+            icon.FrameImage.color = new Color(1f, 1f, 1f, 0.24f);
         }
 
         private void SetIconAsLost(BlobIcon icon)
         {
+            icon.IsActive = false;
             icon.Rect.localScale = Vector3.one * 0.62f;
             icon.Rect.localRotation = Quaternion.identity;
             icon.Group.alpha = lostAlpha;
-            icon.Image.color = lostTint;
+            icon.FillImage.color = lostTint;
+            icon.FillImage.fillAmount = lostFillAmount;
+            icon.FrameImage.color = new Color(1f, 1f, 1f, 0.15f);
+        }
+
+        private void SyncStyleAndFill(bool forceApply)
+        {
+            if (syncColorWithPlayer && playerVisual != null)
+            {
+                Color playerColor = playerVisual.fillColor;
+                activeTint = new Color(playerColor.r, playerColor.g, playerColor.b, 1f);
+
+                Color dimmed = Color.Lerp(activeTint, Color.white, 0.35f);
+                lostTint = new Color(dimmed.r, dimmed.g, dimmed.b, 0.85f);
+            }
+
+            float targetFill = currentInsideFill;
+            if (syncInsideFillWithWater && healthSource != null)
+            {
+                targetFill = healthSource.WaterRatio;
+            }
+
+            if (!forceApply && Mathf.Abs(targetFill - currentInsideFill) < 0.0001f)
+            {
+                return;
+            }
+
+            currentInsideFill = Mathf.Clamp01(targetFill);
+
+            for (int i = 0; i < icons.Count; i++)
+            {
+                BlobIcon icon = icons[i];
+                if (icon.Animation != null)
+                {
+                    continue;
+                }
+
+                if (icon.IsActive)
+                {
+                    icon.FillImage.color = activeTint;
+                    icon.FillImage.fillAmount = GetActiveFillAmountForIndex(i);
+                }
+                else
+                {
+                    icon.FillImage.color = lostTint;
+                    icon.FillImage.fillAmount = lostFillAmount;
+                }
+            }
+        }
+
+        private float GetActiveFillAmountForIndex(int index)
+        {
+            if (displayedHealth <= 0)
+            {
+                return lostFillAmount;
+            }
+
+            int lastActiveIndex = displayedHealth - 1;
+            if (index < lastActiveIndex)
+            {
+                return 1f;
+            }
+
+            if (index == lastActiveIndex)
+            {
+                return currentInsideFill;
+            }
+
+            return 1f;
         }
 
         private void StopAllIconAnimations()
@@ -412,12 +536,8 @@ namespace WaterBlob
             {
                 filterMode = FilterMode.Bilinear,
                 wrapMode = TextureWrapMode.Clamp,
-                name = "HealthBlobIcon_Runtime"
+                name = "HealthCircleIcon_Runtime"
             };
-
-            Color bottomColor = new(0.16f, 0.62f, 0.95f, 1f);
-            Color topColor = new(0.63f, 0.91f, 1f, 1f);
-            Color eyeColor = new(0.04f, 0.17f, 0.24f, 1f);
 
             float inv = 1f / size;
             for (int y = 0; y < size; y++)
@@ -426,52 +546,29 @@ namespace WaterBlob
                 {
                     float u = (x + 0.5f) * inv * 2f - 1f;
                     float v = (y + 0.5f) * inv * 2f - 1f;
-
-                    float angle = Mathf.Atan2(v, u);
                     float dist = Mathf.Sqrt(u * u + v * v);
-                    float wobble = 0.08f * Mathf.Sin(angle * 3.1f + 0.65f) + 0.04f * Mathf.Sin(angle * 5.3f - 0.85f);
-                    float radius = 0.78f + wobble;
-                    float alpha = Mathf.Clamp01((radius - dist) / 0.12f);
-                    alpha = alpha * alpha * (3f - 2f * alpha);
 
+                    float alpha = Mathf.Clamp01((0.95f - dist) / 0.12f);
+                    alpha = alpha * alpha * (3f - 2f * alpha);
                     if (alpha <= 0.0001f)
                     {
                         texture.SetPixel(x, y, Color.clear);
                         continue;
                     }
 
-                    float vertical = Mathf.InverseLerp(-1f, 1f, v);
-                    Color c = Color.Lerp(bottomColor, topColor, vertical);
+                    float topHighlight = Mathf.Clamp01((v + 1f) * 0.5f);
+                    float sideSoft = Mathf.Clamp01(1f - Mathf.Abs(u) * 0.9f);
+                    float brightness = 0.82f + topHighlight * 0.16f + sideSoft * 0.05f;
 
-                    float highlightX = u + 0.28f;
-                    float highlightY = v - 0.34f;
-                    float highlightDist = Mathf.Sqrt(highlightX * highlightX + highlightY * highlightY);
-                    float highlight = Mathf.Clamp01(1f - highlightDist * 2.7f);
-                    c = Color.Lerp(c, Color.white, highlight * 0.45f);
-
-                    float leftEye = CircleMask(u, v, -0.2f, 0.12f, 0.09f);
-                    float rightEye = CircleMask(u, v, 0.2f, 0.12f, 0.09f);
-                    float eyeMask = Mathf.Max(leftEye, rightEye);
-                    c = Color.Lerp(c, eyeColor, eyeMask);
-
-                    c.a = alpha;
+                    Color c = new(brightness, brightness, brightness, alpha);
                     texture.SetPixel(x, y, c);
                 }
             }
 
             texture.Apply(updateMipmaps: false, makeNoLongerReadable: false);
             cachedBlobSprite = Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), size);
-            cachedBlobSprite.name = "HealthBlobIconSprite_Runtime";
+            cachedBlobSprite.name = "HealthCircleIconSprite_Runtime";
             return cachedBlobSprite;
-        }
-
-        private static float CircleMask(float x, float y, float cx, float cy, float radius)
-        {
-            float dx = x - cx;
-            float dy = y - cy;
-            float dist = Mathf.Sqrt(dx * dx + dy * dy);
-            float edge = Mathf.Clamp01((radius - dist) / (radius * 0.35f));
-            return edge * edge * (3f - 2f * edge);
         }
     }
 }
