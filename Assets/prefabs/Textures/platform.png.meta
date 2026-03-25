@@ -37,15 +37,15 @@ TextureImporter:
     filterMode: 1
     aniso: 1
     mipBias: 0
-    wrapU: 1
-    wrapV: 1
+    wrapU: 0
+    wrapV: 0
     wrapW: 0
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
   spriteMode: 2
   spriteExtrude: 1
-  spriteMeshType: 1
+  spriteMeshType: 0
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
   spritePixelsToUnits: 100
@@ -106,6 +106,19 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
@@ -113,12 +126,12 @@ TextureImporter:
       name: game-seamless-ground-texture-layer-cartoon-vector-grass-land-desert-surface-gravel-pattern-ice-floor-lava-formation-environment-illustration-set-mobile-app-underground-stone-ui-path_0
       rect:
         serializedVersion: 2
-        x: 97
-        y: 221
-        width: 855
-        height: 127
+        x: 95
+        y: 220
+        width: 858
+        height: 130
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -140,7 +153,7 @@ TextureImporter:
         width: 860
         height: 125
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -157,12 +170,12 @@ TextureImporter:
       name: game-seamless-ground-texture-layer-cartoon-vector-grass-land-desert-surface-gravel-pattern-ice-floor-lava-formation-environment-illustration-set-mobile-app-underground-stone-ui-path_2
       rect:
         serializedVersion: 2
-        x: 97
-        y: 392
-        width: 858
-        height: 129
+        x: 94
+        y: 394
+        width: 861
+        height: 127
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -179,10 +192,10 @@ TextureImporter:
       name: game-seamless-ground-texture-layer-cartoon-vector-grass-land-desert-surface-gravel-pattern-ice-floor-lava-formation-environment-illustration-set-mobile-app-underground-stone-ui-path_3
       rect:
         serializedVersion: 2
-        x: 99
-        y: 567
-        width: 859
-        height: 126
+        x: 95
+        y: 571
+        width: 857
+        height: 133
       alignment: 9
       pivot: {x: 0.3641289, y: 0.62968224}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -215,6 +228,7 @@ TextureImporter:
       game-seamless-ground-texture-layer-cartoon-vector-grass-land-desert-surface-gravel-pattern-ice-floor-lava-formation-environment-illustration-set-mobile-app-underground-stone-ui-path_1: 1045050716
       game-seamless-ground-texture-layer-cartoon-vector-grass-land-desert-surface-gravel-pattern-ice-floor-lava-formation-environment-illustration-set-mobile-app-underground-stone-ui-path_2: -107191183
       game-seamless-ground-texture-layer-cartoon-vector-grass-land-desert-surface-gravel-pattern-ice-floor-lava-formation-environment-illustration-set-mobile-app-underground-stone-ui-path_3: -2142604560
+      platform_0: -986983710
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
