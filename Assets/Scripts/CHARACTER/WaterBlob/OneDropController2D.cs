@@ -817,9 +817,12 @@ namespace WaterBlob
             bool groundedGate = !movementSfxRequireGrounded || grounded;
             bool slideGate = !isSliding || movementSfxPlayWhileSliding;
             bool shouldPlay = desiredClip != null && !actionMuteActive && groundedGate && slideGate && moveVfxActive;
-            float targetVolume = shouldPlay ? movementSfxVolume : 0f;
+            float scaledMovementMaxVolume = OneDropAudioSettings2D.ApplySfx(movementSfxVolume);
+            float targetVolume = shouldPlay ? scaledMovementMaxVolume : 0f;
             float fadeDuration = targetVolume > movementSfxCurrentVolume ? movementSfxFadeIn : movementSfxFadeOut;
-            float step = fadeDuration > 0f ? Mathf.Max(0.0001f, movementSfxVolume) * (dt / fadeDuration) : Mathf.Max(0.0001f, movementSfxVolume);
+            float step = fadeDuration > 0f
+                ? Mathf.Max(0.0001f, scaledMovementMaxVolume) * (dt / fadeDuration)
+                : Mathf.Max(0.0001f, scaledMovementMaxVolume);
 
             if (shouldPlay && !movementSfxSource.isPlaying)
             {
@@ -904,7 +907,7 @@ namespace WaterBlob
                 return;
             }
 
-            source.PlayOneShot(clip, Mathf.Clamp01(volume));
+            source.PlayOneShot(clip, OneDropAudioSettings2D.ApplySfx(volume));
         }
 
         private void StopMovementSfxImmediate()

@@ -34,10 +34,14 @@ namespace WaterBlob
         [SerializeField, Min(0f)] private float timerWobbleFrequency = 0.95f;
 
         [Header("Pause Menu")]
+        [SerializeField] private bool rebuildPauseMenuFromScratchAtRuntime = true;
         [SerializeField] private GameObject pausePanel;
         [SerializeField] private Button pauseResumeButton;
         [SerializeField] private Button pauseRestartButton;
+        [SerializeField] private Button pauseSoundButton;
         [SerializeField] private Button pauseExitButton;
+        [SerializeField] private GameObject pauseSoundPanel;
+        [SerializeField] private Button pauseSoundBackButton;
 
         [Header("Game Over")]
         [SerializeField] private GameObject gameOverPanel;
@@ -51,12 +55,24 @@ namespace WaterBlob
         [SerializeField] private AudioSource buttonClickSoundSource;
         [SerializeField] private AudioSource navigationSoundSource;
 
+        [Header("Audio Settings")]
+        [SerializeField] private Slider sfxVolumeSlider;
+        [SerializeField] private Slider musicVolumeSlider;
+        [SerializeField, Min(0f)] private float sfxSliderPreviewInterval = 0.08f;
+
         private Font defaultFont;
         private bool buttonsWired;
         private RectTransform timerRect;
         private Vector3 timerBaseScale = Vector3.one;
         private int lastTimerCentiseconds = -1;
         private float timerAnimTime;
+        private float pauseMenuMusicBaseVolume = 1f;
+        private float gameOverMusicBaseVolume = 1f;
+        private float buttonClickBaseVolume = 1f;
+        private float navigationBaseVolume = 1f;
+        private Text sfxVolumeLabelText;
+        private Text musicVolumeLabelText;
+        private float lastSfxSliderPreviewTime = -99f;
 #if UNITY_EDITOR
         private bool editorBuildQueued;
 #endif
@@ -97,6 +113,9 @@ namespace WaterBlob
             EnsureRuntimeUi();
             CacheTimerRect();
             WireButtons();
+            CacheAudioBaseVolumes();
+            WireVolumeControls();
+            ApplyMenuAudioVolumes();
 
             SetPausePanelVisible(false, selectDefault: false);
             SetGameOverPanelVisible(false, -1f);
@@ -107,6 +126,9 @@ namespace WaterBlob
         private void OnEnable()
         {
             ResolveGameManager();
+            WireVolumeControls();
+            OneDropAudioSettings2D.VolumesChanged += HandleGlobalAudioVolumesChanged;
+            ApplyMenuAudioVolumes();
             if (gameManager == null)
             {
                 return;
@@ -126,6 +148,7 @@ namespace WaterBlob
 
         private void OnDisable()
         {
+            OneDropAudioSettings2D.VolumesChanged -= HandleGlobalAudioVolumesChanged;
             if (gameManager == null)
             {
                 ResetTimerVisualTransform();
@@ -266,10 +289,21 @@ namespace WaterBlob
                 timerLabel = CreateTimerLabel();
             }
 
+            if (Application.isPlaying)
+            {
+                RebuildPauseMenuFromScratchIfRequested();
+            }
+
+            PreparePauseMenuLayout();
             ResolvePauseUiReferences();
             if (pausePanel == null)
             {
                 CreatePauseMenu();
+            }
+            else
+            {
+                EnsurePauseVolumeControlsUi();
+                ResolvePauseUiReferences();
             }
 
             ResolveGameOverUiReferences();
@@ -277,6 +311,85 @@ namespace WaterBlob
             {
                 CreateGameOverMenu();
             }
+        }
+
+        private void RebuildPauseMenuFromScratchIfRequested()
+        {
+            if (!rebuildPauseMenuFromScratchAtRuntime)
+            {
+                return;
+            }
+
+            if (targetCanvas != null)
+            {
+                List<GameObject> toRemove = new();
+                for (int i = 0; i < targetCanvas.transform.childCount; i++)
+                {
+                    Transform child = targetCanvas.transform.GetChild(i);
+                    if (child == null)
+                    {
+                        continue;
+                    }
+
+                    string name = child.gameObject.name;
+                    if (name.Equals("PauseMenuPanel", StringComparison.OrdinalIgnoreCase) || name.Equals("PauseSoundPanel", StringComparison.OrdinalIgnoreCase))
+                    {
+                        toRemove.Add(child.gameObject);
+                    }
+                }
+
+                for (int i = 0; i < toRemove.Count; i++)
+                {
+                    if (toRemove[i] != null)
+                    {
+                        Destroy(toRemove[i]);
+                    }
+                }
+            }
+
+            pausePanel = null;
+            pauseResumeButton = null;
+            pauseRestartButton = null;
+            pauseSoundButton = null;
+            pauseExitButton = null;
+            pauseSoundPanel = null;
+            pauseSoundBackButton = null;
+            sfxVolumeSlider = null;
+            musicVolumeSlider = null;
+            sfxVolumeLabelText = null;
+            musicVolumeLabelText = null;
+            buttonsWired = false;
+            rebuildPauseMenuFromScratchAtRuntime = false;
+        }
+
+        private void PreparePauseMenuLayout()
+        {
+            if (pausePanel == null)
+            {
+                return;
+            }
+
+            ResolvePauseUiReferences();
+            bool hasSoundButton = pauseSoundButton != null && (ButtonContainsToken(pauseSoundButton, "sound") || ButtonContainsToken(pauseSoundButton, "audio"));
+            if (hasSoundButton)
+            {
+                return;
+            }
+
+            // Legacy pause panel detected (Resume/Restart/Exit + sliders). Hide it and rebuild a new one with a Sound entry.
+            pausePanel.SetActive(false);
+            pausePanel = null;
+            pauseResumeButton = null;
+            pauseRestartButton = null;
+            pauseSoundButton = null;
+            pauseExitButton = null;
+            pauseSoundPanel = null;
+            pauseSoundBackButton = null;
+            sfxVolumeSlider = null;
+            musicVolumeSlider = null;
+            sfxVolumeLabelText = null;
+            musicVolumeLabelText = null;
+            buttonsWired = false;
         }
 
         private void ResolveTimerReference()
@@ -316,6 +429,115 @@ namespace WaterBlob
             }
 
             Button[] buttons = pausePanel.GetComponentsInChildren<Button>(true);
+            if (pauseSoundButton != null)
+            {
+                bool looksLikeSound = ButtonContainsToken(pauseSoundButton, "sound") || ButtonContainsToken(pauseSoundButton, "audio");
+                bool conflicts = pauseSoundButton == pauseResumeButton || pauseSoundButton == pauseRestartButton || pauseSoundButton == pauseExitButton;
+                if (!looksLikeSound || conflicts)
+                {
+                    pauseSoundButton = null;
+                }
+            }
+
+            if (pauseSoundBackButton != null)
+            {
+                bool looksLikeSoundBack = ButtonContainsToken(pauseSoundBackButton, "back") && (ButtonContainsToken(pauseSoundBackButton, "sound") || ButtonContainsToken(pauseSoundBackButton, "audio"));
+                if (!looksLikeSoundBack)
+                {
+                    pauseSoundBackButton = null;
+                }
+            }
+
+            if (pauseResumeButton == null)
+            {
+                for (int i = 0; i < buttons.Length; i++)
+                {
+                    Button button = buttons[i];
+                    if (button == null)
+                    {
+                        continue;
+                    }
+
+                    if (ButtonContainsToken(button, "resume"))
+                    {
+                        pauseResumeButton = button;
+                        break;
+                    }
+                }
+            }
+
+            if (pauseRestartButton == null)
+            {
+                for (int i = 0; i < buttons.Length; i++)
+                {
+                    Button button = buttons[i];
+                    if (button == null)
+                    {
+                        continue;
+                    }
+
+                    if (ButtonContainsToken(button, "restart") && !ButtonContainsToken(button, "gameover"))
+                    {
+                        pauseRestartButton = button;
+                        break;
+                    }
+                }
+            }
+
+            if (pauseSoundButton == null)
+            {
+                for (int i = 0; i < buttons.Length; i++)
+                {
+                    Button button = buttons[i];
+                    if (button == null)
+                    {
+                        continue;
+                    }
+
+                    if (ButtonContainsToken(button, "sound") || ButtonContainsToken(button, "audio"))
+                    {
+                        pauseSoundButton = button;
+                        break;
+                    }
+                }
+            }
+
+            if (pauseExitButton == null)
+            {
+                for (int i = 0; i < buttons.Length; i++)
+                {
+                    Button button = buttons[i];
+                    if (button == null)
+                    {
+                        continue;
+                    }
+
+                    if (ButtonContainsToken(button, "exit") && !ButtonContainsToken(button, "gameover"))
+                    {
+                        pauseExitButton = button;
+                        break;
+                    }
+                }
+            }
+
+            if (pauseSoundBackButton == null)
+            {
+                for (int i = 0; i < buttons.Length; i++)
+                {
+                    Button button = buttons[i];
+                    if (button == null)
+                    {
+                        continue;
+                    }
+
+                    if (ButtonContainsToken(button, "back") && (ButtonContainsToken(button, "sound") || ButtonContainsToken(button, "audio")))
+                    {
+                        pauseSoundBackButton = button;
+                        break;
+                    }
+                }
+            }
+
             if (pauseResumeButton == null && buttons.Length > 0)
             {
                 pauseResumeButton = buttons[0];
@@ -326,9 +548,57 @@ namespace WaterBlob
                 pauseRestartButton = buttons[1];
             }
 
-            if (pauseExitButton == null && buttons.Length > 2)
+            if (pauseExitButton == null)
             {
-                pauseExitButton = buttons[2];
+                for (int i = 0; i < buttons.Length; i++)
+                {
+                    Button button = buttons[i];
+                    if (button == null || button == pauseResumeButton || button == pauseRestartButton || button == pauseSoundButton || button == pauseSoundBackButton)
+                    {
+                        continue;
+                    }
+
+                    pauseExitButton = button;
+                    break;
+                }
+            }
+
+            if (pauseSoundPanel == null)
+            {
+                Transform foundSoundPanel = pausePanel.transform.Find("PauseSoundPanel");
+                if (foundSoundPanel != null)
+                {
+                    pauseSoundPanel = foundSoundPanel.gameObject;
+                }
+            }
+
+            Slider[] sliders = pausePanel.GetComponentsInChildren<Slider>(true);
+            for (int i = 0; i < sliders.Length; i++)
+            {
+                Slider slider = sliders[i];
+                if (slider == null)
+                {
+                    continue;
+                }
+
+                if (sfxVolumeSlider == null && SliderContainsToken(slider, "sfx"))
+                {
+                    sfxVolumeSlider = slider;
+                }
+                else if (musicVolumeSlider == null && SliderContainsToken(slider, "music"))
+                {
+                    musicVolumeSlider = slider;
+                }
+            }
+
+            if (sfxVolumeSlider != null)
+            {
+                sfxVolumeLabelText = ResolveSliderRowLabel(sfxVolumeSlider);
+            }
+
+            if (musicVolumeSlider != null)
+            {
+                musicVolumeLabelText = ResolveSliderRowLabel(musicVolumeSlider);
             }
         }
 
@@ -410,12 +680,43 @@ namespace WaterBlob
         private void CreatePauseMenu()
         {
             pausePanel = CreateFullscreenPanel("PauseMenuPanel", new Color(0f, 0f, 0f, 0.66f));
-            RectTransform card = CreateMenuCard(pausePanel.transform, new Vector2(480f, 400f));
+            RectTransform card = CreateMenuCard(pausePanel.transform, new Vector2(540f, 430f));
 
             CreateLabel(card, "PauseTitle", "Paused", 50, FontStyle.Bold, TextAnchor.MiddleCenter);
             pauseResumeButton = CreateButton(card, "ResumeButton", "Resume");
             pauseRestartButton = CreateButton(card, "RestartButton", "Restart");
+            pauseSoundButton = CreateButton(card, "SoundButton", "Sound");
             pauseExitButton = CreateButton(card, "ExitButton", "Exit");
+
+            CreatePauseSoundPanel();
+        }
+
+        private void CreatePauseSoundPanel()
+        {
+            if (pausePanel == null)
+            {
+                return;
+            }
+
+            GameObject panelGo = new("PauseSoundPanel", typeof(RectTransform), typeof(Image));
+            RectTransform panelRect = panelGo.GetComponent<RectTransform>();
+            panelRect.SetParent(pausePanel.transform, false);
+            panelRect.anchorMin = Vector2.zero;
+            panelRect.anchorMax = Vector2.one;
+            panelRect.offsetMin = Vector2.zero;
+            panelRect.offsetMax = Vector2.zero;
+
+            Image panelImage = panelGo.GetComponent<Image>();
+            panelImage.color = new Color(0f, 0f, 0f, 0.52f);
+
+            RectTransform card = CreateMenuCard(panelGo.transform, new Vector2(540f, 380f));
+            CreateLabel(card, "PauseSoundTitle", "Sound", 46, FontStyle.Bold, TextAnchor.MiddleCenter);
+            sfxVolumeSlider = CreateLabeledSlider(card, "SfxVolume", "SFX Volume");
+            musicVolumeSlider = CreateLabeledSlider(card, "MusicVolume", "Music Volume");
+            pauseSoundBackButton = CreateButton(card, "PauseSoundBackButton", "Back");
+
+            pauseSoundPanel = panelGo;
+            pauseSoundPanel.SetActive(false);
         }
 
         private void CreateGameOverMenu()
@@ -538,6 +839,343 @@ namespace WaterBlob
             return button;
         }
 
+        private Slider CreateLabeledSlider(Transform parent, string objectName, string labelText)
+        {
+            GameObject rowGo = new($"{objectName}Row", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(LayoutElement));
+            RectTransform rowRect = rowGo.GetComponent<RectTransform>();
+            rowRect.SetParent(parent, false);
+            rowRect.sizeDelta = new Vector2(0f, 82f);
+
+            VerticalLayoutGroup rowLayout = rowGo.GetComponent<VerticalLayoutGroup>();
+            rowLayout.padding = new RectOffset(0, 0, 0, 0);
+            rowLayout.spacing = 6f;
+            rowLayout.childControlWidth = true;
+            rowLayout.childControlHeight = false;
+            rowLayout.childForceExpandWidth = true;
+            rowLayout.childForceExpandHeight = false;
+
+            LayoutElement rowElement = rowGo.GetComponent<LayoutElement>();
+            rowElement.preferredHeight = 82f;
+
+            Text label = CreateLabel(rowRect, $"{objectName}Label", labelText, 24, FontStyle.Normal, TextAnchor.MiddleLeft);
+            LayoutElement labelLayout = label.GetComponent<LayoutElement>();
+            if (labelLayout != null)
+            {
+                labelLayout.preferredHeight = 30f;
+            }
+
+            GameObject sliderGo = new($"{objectName}Slider", typeof(RectTransform), typeof(Slider), typeof(LayoutElement));
+            RectTransform sliderRect = sliderGo.GetComponent<RectTransform>();
+            sliderRect.SetParent(rowRect, false);
+            sliderRect.sizeDelta = new Vector2(0f, 34f);
+
+            LayoutElement sliderLayout = sliderGo.GetComponent<LayoutElement>();
+            sliderLayout.preferredHeight = 34f;
+
+            Slider slider = sliderGo.GetComponent<Slider>();
+            slider.minValue = 0f;
+            slider.maxValue = 1f;
+            slider.wholeNumbers = false;
+            slider.direction = Slider.Direction.LeftToRight;
+
+            GameObject backgroundGo = new("Background", typeof(RectTransform), typeof(Image));
+            RectTransform backgroundRect = backgroundGo.GetComponent<RectTransform>();
+            backgroundRect.SetParent(sliderRect, false);
+            backgroundRect.anchorMin = new Vector2(0f, 0.5f);
+            backgroundRect.anchorMax = new Vector2(1f, 0.5f);
+            backgroundRect.sizeDelta = new Vector2(0f, 12f);
+            backgroundRect.anchoredPosition = Vector2.zero;
+
+            Image backgroundImage = backgroundGo.GetComponent<Image>();
+            backgroundImage.color = new Color(0.14f, 0.22f, 0.28f, 0.95f);
+
+            GameObject fillAreaGo = new("Fill Area", typeof(RectTransform));
+            RectTransform fillAreaRect = fillAreaGo.GetComponent<RectTransform>();
+            fillAreaRect.SetParent(sliderRect, false);
+            fillAreaRect.anchorMin = new Vector2(0f, 0f);
+            fillAreaRect.anchorMax = new Vector2(1f, 1f);
+            fillAreaRect.offsetMin = new Vector2(10f, 11f);
+            fillAreaRect.offsetMax = new Vector2(-10f, -11f);
+
+            GameObject fillGo = new("Fill", typeof(RectTransform), typeof(Image));
+            RectTransform fillRect = fillGo.GetComponent<RectTransform>();
+            fillRect.SetParent(fillAreaRect, false);
+            fillRect.anchorMin = new Vector2(0f, 0f);
+            fillRect.anchorMax = new Vector2(1f, 1f);
+            fillRect.offsetMin = Vector2.zero;
+            fillRect.offsetMax = Vector2.zero;
+
+            Image fillImage = fillGo.GetComponent<Image>();
+            fillImage.color = new Color(0.36f, 0.73f, 0.92f, 1f);
+
+            GameObject handleAreaGo = new("Handle Slide Area", typeof(RectTransform));
+            RectTransform handleAreaRect = handleAreaGo.GetComponent<RectTransform>();
+            handleAreaRect.SetParent(sliderRect, false);
+            handleAreaRect.anchorMin = new Vector2(0f, 0f);
+            handleAreaRect.anchorMax = new Vector2(1f, 1f);
+            handleAreaRect.offsetMin = new Vector2(10f, 0f);
+            handleAreaRect.offsetMax = new Vector2(-10f, 0f);
+
+            GameObject handleGo = new("Handle", typeof(RectTransform), typeof(Image));
+            RectTransform handleRect = handleGo.GetComponent<RectTransform>();
+            handleRect.SetParent(handleAreaRect, false);
+            handleRect.sizeDelta = new Vector2(20f, 30f);
+
+            Image handleImage = handleGo.GetComponent<Image>();
+            handleImage.color = new Color(0.93f, 0.99f, 1f, 1f);
+
+            slider.targetGraphic = handleImage;
+            slider.fillRect = fillRect;
+            slider.handleRect = handleRect;
+
+            return slider;
+        }
+
+        private void EnsurePauseVolumeControlsUi()
+        {
+            if (pausePanel == null)
+            {
+                return;
+            }
+
+            RectTransform mainCard = ResolvePauseMenuCard();
+            if (mainCard == null)
+            {
+                return;
+            }
+
+            if (pauseSoundButton == null)
+            {
+                pauseSoundButton = CreateButton(mainCard, "SoundButton", "Sound");
+                if (pauseExitButton != null)
+                {
+                    pauseSoundButton.transform.SetSiblingIndex(Mathf.Max(0, pauseExitButton.transform.GetSiblingIndex()));
+                }
+            }
+            else if (!pauseSoundButton.transform.IsChildOf(mainCard))
+            {
+                pauseSoundButton.transform.SetParent(mainCard, false);
+            }
+
+            if (pauseSoundPanel == null)
+            {
+                CreatePauseSoundPanel();
+            }
+
+            RectTransform soundCard = ResolvePauseSoundCard();
+            if (soundCard == null)
+            {
+                return;
+            }
+
+            Slider[] allPauseSliders = pausePanel.GetComponentsInChildren<Slider>(true);
+            for (int i = 0; i < allPauseSliders.Length; i++)
+            {
+                Slider slider = allPauseSliders[i];
+                if (slider == null || slider.transform.parent == null)
+                {
+                    continue;
+                }
+
+                if (slider.transform.IsChildOf(soundCard) || !slider.transform.IsChildOf(mainCard))
+                {
+                    continue;
+                }
+
+                // Move any legacy pause sliders into the sound sub-panel so old layouts migrate automatically.
+                slider.transform.parent.SetParent(soundCard, false);
+            }
+
+            if (sfxVolumeSlider != null && sfxVolumeSlider.transform.parent != null && !sfxVolumeSlider.transform.IsChildOf(soundCard))
+            {
+                sfxVolumeSlider.transform.parent.SetParent(soundCard, false);
+            }
+
+            if (musicVolumeSlider != null && musicVolumeSlider.transform.parent != null && !musicVolumeSlider.transform.IsChildOf(soundCard))
+            {
+                musicVolumeSlider.transform.parent.SetParent(soundCard, false);
+            }
+
+            if (sfxVolumeSlider == null || !sfxVolumeSlider.transform.IsChildOf(soundCard))
+            {
+                Slider existingSfx = FindSliderByToken(soundCard, "sfx");
+                sfxVolumeSlider = existingSfx != null ? existingSfx : CreateLabeledSlider(soundCard, "SfxVolume", "SFX Volume");
+            }
+
+            if (musicVolumeSlider == null || !musicVolumeSlider.transform.IsChildOf(soundCard))
+            {
+                Slider existingMusic = FindSliderByToken(soundCard, "music");
+                musicVolumeSlider = existingMusic != null ? existingMusic : CreateLabeledSlider(soundCard, "MusicVolume", "Music Volume");
+            }
+
+            if (pauseSoundBackButton == null)
+            {
+                pauseSoundBackButton = CreateButton(soundCard, "PauseSoundBackButton", "Back");
+            }
+            else if (!pauseSoundBackButton.transform.IsChildOf(soundCard))
+            {
+                pauseSoundBackButton.transform.SetParent(soundCard, false);
+            }
+
+            if (pauseSoundPanel != null && pauseSoundPanel.activeSelf)
+            {
+                pauseSoundPanel.SetActive(false);
+            }
+
+            if (sfxVolumeSlider != null)
+            {
+                sfxVolumeLabelText = ResolveSliderRowLabel(sfxVolumeSlider);
+            }
+
+            if (musicVolumeSlider != null)
+            {
+                musicVolumeLabelText = ResolveSliderRowLabel(musicVolumeSlider);
+            }
+        }
+
+        private static Slider FindSliderByToken(Transform root, string nameToken)
+        {
+            if (root == null)
+            {
+                return null;
+            }
+
+            Slider[] sliders = root.GetComponentsInChildren<Slider>(true);
+            for (int i = 0; i < sliders.Length; i++)
+            {
+                Slider slider = sliders[i];
+                if (slider == null)
+                {
+                    continue;
+                }
+
+                if (SliderContainsToken(slider, nameToken))
+                {
+                    return slider;
+                }
+            }
+
+            return null;
+        }
+
+        private RectTransform ResolvePauseMenuCard()
+        {
+            if (pausePanel == null)
+            {
+                return null;
+            }
+
+            Transform named = pausePanel.transform.Find("MenuCard");
+            if (named is RectTransform namedRect)
+            {
+                return namedRect;
+            }
+
+            if (pausePanel.transform.childCount > 0 && pausePanel.transform.GetChild(0) is RectTransform childRect)
+            {
+                return childRect;
+            }
+
+            return null;
+        }
+
+        private RectTransform ResolvePauseSoundCard()
+        {
+            if (pauseSoundPanel == null)
+            {
+                return null;
+            }
+
+            Transform named = pauseSoundPanel.transform.Find("MenuCard");
+            if (named is RectTransform namedRect)
+            {
+                return namedRect;
+            }
+
+            if (pauseSoundPanel.transform.childCount > 0 && pauseSoundPanel.transform.GetChild(0) is RectTransform childRect)
+            {
+                return childRect;
+            }
+
+            return null;
+        }
+
+        private static Text ResolveSliderRowLabel(Slider slider)
+        {
+            if (slider == null || slider.transform.parent == null)
+            {
+                return null;
+            }
+
+            string labelName = slider.name.Replace("Slider", "Label");
+            Transform found = slider.transform.parent.Find(labelName);
+            if (found != null)
+            {
+                return found.GetComponent<Text>();
+            }
+
+            return slider.transform.parent.GetComponentInChildren<Text>(true);
+        }
+
+        private static bool ButtonContainsToken(Button button, string token)
+        {
+            if (button == null || string.IsNullOrEmpty(token))
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrEmpty(button.name) && button.name.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return true;
+            }
+
+            Text legacyText = button.GetComponentInChildren<Text>(true);
+            if (legacyText != null && !string.IsNullOrEmpty(legacyText.text) && legacyText.text.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return true;
+            }
+
+            TMP_Text tmpText = button.GetComponentInChildren<TMP_Text>(true);
+            return tmpText != null && !string.IsNullOrEmpty(tmpText.text) && tmpText.text.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static bool SliderContainsToken(Slider slider, string token)
+        {
+            if (slider == null || string.IsNullOrEmpty(token))
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrEmpty(slider.name) && slider.name.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return true;
+            }
+
+            Text rowLabel = ResolveSliderRowLabel(slider);
+            if (rowLabel != null && !string.IsNullOrEmpty(rowLabel.text) && rowLabel.text.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return true;
+            }
+
+            TMP_Text rowTmp = slider.transform.parent != null ? slider.transform.parent.GetComponentInChildren<TMP_Text>(true) : null;
+            return rowTmp != null && !string.IsNullOrEmpty(rowTmp.text) && rowTmp.text.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private void UpdateVolumeLabelTexts()
+        {
+            if (sfxVolumeLabelText != null)
+            {
+                int pct = Mathf.RoundToInt(OneDropAudioSettings2D.SfxVolume * 100f);
+                sfxVolumeLabelText.text = $"SFX Volume ({pct}%)";
+            }
+
+            if (musicVolumeLabelText != null)
+            {
+                int pct = Mathf.RoundToInt(OneDropAudioSettings2D.MusicVolume * 100f);
+                musicVolumeLabelText.text = $"Music Volume ({pct}%)";
+            }
+        }
+
         private Font GetDefaultFont()
         {
             if (defaultFont != null)
@@ -563,17 +1201,68 @@ namespace WaterBlob
 
             BindButton(pauseResumeButton, OnPauseResumeClicked);
             BindButton(pauseRestartButton, OnPauseRestartClicked);
+            BindButton(pauseSoundButton, OnPauseSoundClicked);
             BindButton(pauseExitButton, OnPauseExitClicked);
+            BindButton(pauseSoundBackButton, OnPauseSoundBackClicked);
             BindButton(gameOverRestartButton, OnGameOverRestartClicked);
             BindButton(gameOverExitButton, OnGameOverExitClicked);
 
             AddNavigationSoundHooks(pauseResumeButton);
             AddNavigationSoundHooks(pauseRestartButton);
+            AddNavigationSoundHooks(pauseSoundButton);
             AddNavigationSoundHooks(pauseExitButton);
+            AddNavigationSoundHooks(pauseSoundBackButton);
             AddNavigationSoundHooks(gameOverRestartButton);
             AddNavigationSoundHooks(gameOverExitButton);
 
             buttonsWired = true;
+        }
+
+        private void WireVolumeControls()
+        {
+            ResolvePauseUiReferences();
+            EnsurePauseVolumeControlsUi();
+            ResolvePauseUiReferences();
+
+            if (sfxVolumeSlider != null)
+            {
+                sfxVolumeSlider.minValue = 0f;
+                sfxVolumeSlider.maxValue = 1f;
+                sfxVolumeSlider.wholeNumbers = false;
+                sfxVolumeSlider.onValueChanged.RemoveListener(OnSfxVolumeSliderChanged);
+                sfxVolumeSlider.SetValueWithoutNotify(OneDropAudioSettings2D.SfxVolume);
+                sfxVolumeSlider.onValueChanged.AddListener(OnSfxVolumeSliderChanged);
+            }
+
+            if (musicVolumeSlider != null)
+            {
+                musicVolumeSlider.minValue = 0f;
+                musicVolumeSlider.maxValue = 1f;
+                musicVolumeSlider.wholeNumbers = false;
+                musicVolumeSlider.onValueChanged.RemoveListener(OnMusicVolumeSliderChanged);
+                musicVolumeSlider.SetValueWithoutNotify(OneDropAudioSettings2D.MusicVolume);
+                musicVolumeSlider.onValueChanged.AddListener(OnMusicVolumeSliderChanged);
+            }
+
+            UpdateVolumeLabelTexts();
+        }
+
+        private void OnSfxVolumeSliderChanged(float value)
+        {
+            OneDropAudioSettings2D.SetSfxVolume(value);
+            UpdateVolumeLabelTexts();
+
+            if (Time.unscaledTime - lastSfxSliderPreviewTime >= sfxSliderPreviewInterval)
+            {
+                lastSfxSliderPreviewTime = Time.unscaledTime;
+                PlayNavigationSound();
+            }
+        }
+
+        private void OnMusicVolumeSliderChanged(float value)
+        {
+            OneDropAudioSettings2D.SetMusicVolume(value);
+            UpdateVolumeLabelTexts();
         }
 
         private void BindButton(Button button, UnityAction callback)
@@ -628,6 +1317,7 @@ namespace WaterBlob
         {
             SetPausePanelVisible(isPaused, selectDefault: true);
             ApplyTimerVisibility();
+            ApplyMenuAudioVolumes();
 
             if (isPaused)
             {
@@ -645,6 +1335,7 @@ namespace WaterBlob
             SetPausePanelVisible(false, selectDefault: false);
             SetGameOverPanelVisible(true, finalTime);
             ApplyTimerVisibility();
+            ApplyMenuAudioVolumes();
 
             StopMenuMusic(pauseMenuMusicSource);
             PlayMenuMusic(gameOverMusicSource);
@@ -658,6 +1349,7 @@ namespace WaterBlob
             }
 
             pausePanel.SetActive(visible);
+            SetPauseSoundPanelVisible(false, selectBackButton: false, selectSoundButton: false);
             if (visible && selectDefault)
             {
                 SelectButton(pauseResumeButton);
@@ -836,6 +1528,18 @@ namespace WaterBlob
             gameManager?.ExitGame();
         }
 
+        private void OnPauseSoundClicked()
+        {
+            PlayButtonClickSound();
+            SetPauseSoundPanelVisible(true, selectBackButton: true, selectSoundButton: false);
+        }
+
+        private void OnPauseSoundBackClicked()
+        {
+            PlayButtonClickSound();
+            SetPauseSoundPanelVisible(false, selectBackButton: false, selectSoundButton: true);
+        }
+
         private void OnGameOverRestartClicked()
         {
             PlayButtonClickSound();
@@ -858,27 +1562,29 @@ namespace WaterBlob
             PlayOneShotFromSource(buttonClickSoundSource);
         }
 
-        private static void PlayOneShotFromSource(AudioSource source)
+        private void PlayOneShotFromSource(AudioSource source)
         {
             if (source == null || source.clip == null)
             {
                 return;
             }
 
+            ApplyMenuAudioVolumes();
             source.PlayOneShot(source.clip);
         }
 
-        private static void PlayMenuMusic(AudioSource source)
+        private void PlayMenuMusic(AudioSource source)
         {
             if (source == null || source.clip == null || source.isPlaying)
             {
                 return;
             }
 
+            ApplyMenuAudioVolumes();
             source.Play();
         }
 
-        private static void StopMenuMusic(AudioSource source)
+        private void StopMenuMusic(AudioSource source)
         {
             if (source == null || !source.isPlaying)
             {
@@ -886,6 +1592,74 @@ namespace WaterBlob
             }
 
             source.Stop();
+        }
+
+        private void SetPauseSoundPanelVisible(bool visible, bool selectBackButton, bool selectSoundButton)
+        {
+            if (pauseSoundPanel == null)
+            {
+                return;
+            }
+
+            pauseSoundPanel.SetActive(visible);
+            if (visible && selectBackButton)
+            {
+                SelectButton(pauseSoundBackButton);
+                return;
+            }
+
+            if (!visible && selectSoundButton)
+            {
+                SelectButton(pauseSoundButton);
+            }
+        }
+
+        private void CacheAudioBaseVolumes()
+        {
+            pauseMenuMusicBaseVolume = pauseMenuMusicSource != null ? Mathf.Clamp01(pauseMenuMusicSource.volume) : 1f;
+            gameOverMusicBaseVolume = gameOverMusicSource != null ? Mathf.Clamp01(gameOverMusicSource.volume) : 1f;
+            buttonClickBaseVolume = buttonClickSoundSource != null ? Mathf.Clamp01(buttonClickSoundSource.volume) : 1f;
+            navigationBaseVolume = navigationSoundSource != null ? Mathf.Clamp01(navigationSoundSource.volume) : 1f;
+        }
+
+        private void ApplyMenuAudioVolumes()
+        {
+            if (pauseMenuMusicSource != null)
+            {
+                pauseMenuMusicSource.volume = OneDropAudioSettings2D.ApplyMusic(pauseMenuMusicBaseVolume);
+            }
+
+            if (gameOverMusicSource != null)
+            {
+                gameOverMusicSource.volume = OneDropAudioSettings2D.ApplyMusic(gameOverMusicBaseVolume);
+            }
+
+            if (buttonClickSoundSource != null)
+            {
+                buttonClickSoundSource.volume = OneDropAudioSettings2D.ApplySfx(buttonClickBaseVolume);
+            }
+
+            if (navigationSoundSource != null)
+            {
+                navigationSoundSource.volume = OneDropAudioSettings2D.ApplySfx(navigationBaseVolume);
+            }
+        }
+
+        private void HandleGlobalAudioVolumesChanged()
+        {
+            ApplyMenuAudioVolumes();
+
+            if (sfxVolumeSlider != null)
+            {
+                sfxVolumeSlider.SetValueWithoutNotify(OneDropAudioSettings2D.SfxVolume);
+            }
+
+            if (musicVolumeSlider != null)
+            {
+                musicVolumeSlider.SetValueWithoutNotify(OneDropAudioSettings2D.MusicVolume);
+            }
+
+            UpdateVolumeLabelTexts();
         }
     }
 }

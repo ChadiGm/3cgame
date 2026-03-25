@@ -34,10 +34,15 @@ namespace WaterBlob
         [SerializeField, Min(0f)] private float loseOvershoot = 0.2f;
         [SerializeField, Min(0.05f)] private float restoreAnimDuration = 0.2f;
 
+        [Header("Visibility")]
+        [SerializeField] private bool hideWhenPaused = true;
+        [SerializeField] private bool hideWhenGameOver = true;
+
         private readonly List<BlobIcon> icons = new();
         private RectTransform root;
         private int displayedHealth = -1;
         private float currentInsideFill = 1f;
+        private OneDropGameManager2D gameManager;
 
         private static Sprite cachedBlobSprite;
 
@@ -54,25 +59,36 @@ namespace WaterBlob
         private void Awake()
         {
             ResolveSource();
+            ResolveGameManager();
         }
 
         private void OnEnable()
         {
             ResolveSource();
+            ResolveGameManager();
             EnsureUi();
             Subscribe();
+            SubscribeGameManager();
             RefreshInstant();
             SyncStyleAndFill(forceApply: true);
+            ApplyVisibilityState();
         }
 
         private void OnDisable()
         {
             Unsubscribe();
+            UnsubscribeGameManager();
             StopAllIconAnimations();
         }
 
         private void LateUpdate()
         {
+            ApplyVisibilityState();
+            if (root != null && !root.gameObject.activeSelf)
+            {
+                return;
+            }
+
             SyncStyleAndFill(forceApply: false);
         }
 
@@ -112,6 +128,77 @@ namespace WaterBlob
             if (playerVisual == null)
             {
                 playerVisual = GetComponentInParent<WaterBlobMeshRenderer2D>();
+            }
+        }
+
+        private void ResolveGameManager()
+        {
+            if (gameManager != null)
+            {
+                return;
+            }
+
+            gameManager = FindFirstObjectByType<OneDropGameManager2D>();
+        }
+
+        private void SubscribeGameManager()
+        {
+            if (gameManager == null)
+            {
+                return;
+            }
+
+            gameManager.PauseStateChanged -= HandlePauseStateChanged;
+            gameManager.GameOverTriggered -= HandleGameOverTriggered;
+            gameManager.PauseStateChanged += HandlePauseStateChanged;
+            gameManager.GameOverTriggered += HandleGameOverTriggered;
+        }
+
+        private void UnsubscribeGameManager()
+        {
+            if (gameManager == null)
+            {
+                return;
+            }
+
+            gameManager.PauseStateChanged -= HandlePauseStateChanged;
+            gameManager.GameOverTriggered -= HandleGameOverTriggered;
+        }
+
+        private void HandlePauseStateChanged(bool _)
+        {
+            ApplyVisibilityState();
+        }
+
+        private void HandleGameOverTriggered(float _)
+        {
+            ApplyVisibilityState();
+        }
+
+        private void ApplyVisibilityState()
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            bool visible = true;
+            if (gameManager != null)
+            {
+                if (hideWhenPaused && gameManager.IsPaused)
+                {
+                    visible = false;
+                }
+
+                if (hideWhenGameOver && gameManager.IsGameOver)
+                {
+                    visible = false;
+                }
+            }
+
+            if (root.gameObject.activeSelf != visible)
+            {
+                root.gameObject.SetActive(visible);
             }
         }
 

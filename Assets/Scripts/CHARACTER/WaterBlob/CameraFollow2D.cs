@@ -16,13 +16,63 @@ namespace WaterBlob
         }
 #pragma warning restore CS0649
 
+        public enum CameraViewMode
+        {
+            KeepCurrent = 0,
+            Landscape = 1,
+            Portrait = 2,
+            CustomRect = 3
+        }
+
+        [System.Serializable]
+        public class ZoneOverrideSettings
+        {
+            [Tooltip("Higher priority wins when zones overlap.")]
+            public int priority = 0;
+
+            [Header("Follow")]
+            public bool overrideFollowTarget;
+            public bool followTarget = true;
+
+            [Header("Position")]
+            public bool overrideOffset;
+            public Vector3 offset = new(0f, 1.2f, -10f);
+            public bool overrideSmoothTime;
+            [Min(0f)] public float smoothTime = 0.13f;
+
+            [Header("Clamp")]
+            public bool overrideClampX;
+            public bool clampX = true;
+            public Vector2 xLimits = new(-13f, 34f);
+            public bool overrideClampY;
+            public bool clampY = false;
+            public Vector2 yLimits = new(-3.5f, 8f);
+
+            [Header("Camera Lens")]
+            public bool overrideOrthographicSize;
+            [Min(0.01f)] public float orthographicSize = 5f;
+            public bool overrideViewMode;
+            public CameraViewMode viewMode = CameraViewMode.KeepCurrent;
+            public Rect customViewportRect = new(0f, 0f, 1f, 1f);
+        }
+
+        private sealed class ActiveZoneOverride
+        {
+            public Object source;
+            public ZoneOverrideSettings settings;
+            public int sequence;
+        }
+
         [SerializeField] private Transform target;
+        [SerializeField] private bool followTarget = true;
         [SerializeField] private Vector3 offset = new(0f, 1.2f, -10f);
         [SerializeField, Min(0f)] private float smoothTime = 0.13f;
         [SerializeField] private bool clampX = true;
         [SerializeField] private bool clampY = false;
         [SerializeField] private Vector2 xLimits = new(-13f, 34f);
         [SerializeField] private Vector2 yLimits = new(-3.5f, 8f);
+        [SerializeField] private CameraViewMode defaultViewMode = CameraViewMode.KeepCurrent;
+        [SerializeField] private Rect defaultCustomViewportRect = new(0f, 0f, 1f, 1f);
 
         [Header("Earthquake Zone")]
         [SerializeField] private bool enableEarthquake = true;
@@ -46,6 +96,15 @@ namespace WaterBlob
         [SerializeField, Min(0f)] private float rumbleIntensity = 0.12f;
         [SerializeField, Min(0f)] private float rumbleFrequency = 0.85f;
 
+        [Header("Earthquake SFX")]
+        [SerializeField] private bool enableEarthquakeSfx = true;
+        [SerializeField] private AudioSource earthquakeSfxSource;
+        [SerializeField] private AudioClip earthquakeSfxClip;
+        [SerializeField, Range(0f, 1f)] private float earthquakeSfxMaxVolume = 0.65f;
+        [SerializeField, Min(0f)] private float earthquakeSfxFadeIn = 0.18f;
+        [SerializeField, Min(0f)] private float earthquakeSfxFadeOut = 0.28f;
+        [SerializeField] private bool earthquakeSfxScaleWithProximity = true;
+
         [Header("Earthquake Events")]
         [SerializeField] private UnityEvent onEnterEarthquakeZone;
         [SerializeField] private UnityEvent onExitEarthquakeZone;
@@ -60,6 +119,25 @@ namespace WaterBlob
         private float noiseSeedY;
         private float noiseSeedR;
         private float rumblePhase;
+        private float earthquakeSfxCurrentVolume;
+
+        private bool currentFollowTarget;
+        private Vector3 currentOffset;
+        private float currentSmoothTime;
+        private bool currentClampX;
+        private bool currentClampY;
+        private Vector2 currentXLimits;
+        private Vector2 currentYLimits;
+        private float currentOrthographicSize;
+        private CameraViewMode currentViewMode;
+        private Rect currentCustomViewportRect;
+
+        private Camera cachedCamera;
+        private float baseOrthographicSize;
+        private Rect baseCameraRect;
+
+        private readonly List<ActiveZoneOverride> activeZoneOverrides = new();
+        private int zoneOverrideSequence;
 
         private void Awake()
         {
@@ -72,10 +150,30 @@ namespace WaterBlob
                 }
             }
 
+            cachedCamera = GetComponent<Camera>();
+            if (cachedCamera == null)
+            {
+                cachedCamera = Camera.main;
+            }
+
+            if (cachedCamera != null)
+            {
+                baseOrthographicSize = cachedCamera.orthographicSize;
+                baseCameraRect = cachedCamera.rect;
+            }
+
             baseRotation = transform.rotation;
             noiseSeedX = Random.value * 100f + 11.3f;
             noiseSeedY = Random.value * 100f + 47.9f;
             noiseSeedR = Random.value * 100f + 83.7f;
+            EnsureEarthquakeSfxSource();
+
+            RebuildRuntimeSettings();
+        }
+
+        private void OnDisable()
+        {
+            StopEarthquakeSfxImmediate();
         }
 
         private void LateUpdate()
@@ -85,15 +183,27 @@ namespace WaterBlob
                 return;
             }
 
-            Vector3 desired = target.position + offset;
-            if (clampX)
+            if (!currentFollowTarget)
             {
-                desired.x = Mathf.Clamp(desired.x, xLimits.x, xLimits.y);
+                if (!hasFollowPosition)
+                {
+                    followPosition = transform.position;
+                    hasFollowPosition = true;
+                }
+
+                ApplyEarthquake(followPosition);
+                return;
             }
 
-            if (clampY)
+            Vector3 desired = target.position + currentOffset;
+            if (currentClampX)
             {
-                desired.y = Mathf.Clamp(desired.y, yLimits.x, yLimits.y);
+                desired.x = Mathf.Clamp(desired.x, currentXLimits.x, currentXLimits.y);
+            }
+
+            if (currentClampY)
+            {
+                desired.y = Mathf.Clamp(desired.y, currentYLimits.x, currentYLimits.y);
             }
 
             if (!hasFollowPosition)
@@ -102,14 +212,196 @@ namespace WaterBlob
                 hasFollowPosition = true;
             }
 
-            followPosition = Vector3.SmoothDamp(followPosition, desired, ref velocity, smoothTime);
+            followPosition = Vector3.SmoothDamp(followPosition, desired, ref velocity, currentSmoothTime);
             ApplyEarthquake(followPosition);
+        }
+
+        public void ApplyZoneOverride(Object source, ZoneOverrideSettings settings)
+        {
+            if (source == null || settings == null)
+            {
+                return;
+            }
+
+            int index = FindZoneOverrideIndex(source);
+            if (index >= 0)
+            {
+                activeZoneOverrides[index].settings = settings;
+                activeZoneOverrides[index].sequence = ++zoneOverrideSequence;
+            }
+            else
+            {
+                activeZoneOverrides.Add(new ActiveZoneOverride
+                {
+                    source = source,
+                    settings = settings,
+                    sequence = ++zoneOverrideSequence
+                });
+            }
+
+            RebuildRuntimeSettings();
+        }
+
+        public void ClearZoneOverride(Object source)
+        {
+            if (source == null)
+            {
+                return;
+            }
+
+            int index = FindZoneOverrideIndex(source);
+            if (index < 0)
+            {
+                return;
+            }
+
+            activeZoneOverrides.RemoveAt(index);
+            RebuildRuntimeSettings();
+        }
+
+        private int FindZoneOverrideIndex(Object source)
+        {
+            for (int i = 0; i < activeZoneOverrides.Count; i++)
+            {
+                ActiveZoneOverride active = activeZoneOverrides[i];
+                if (active != null && active.source == source)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        private ActiveZoneOverride ResolveTopOverride()
+        {
+            ActiveZoneOverride best = null;
+            for (int i = 0; i < activeZoneOverrides.Count; i++)
+            {
+                ActiveZoneOverride candidate = activeZoneOverrides[i];
+                if (candidate == null || candidate.settings == null)
+                {
+                    continue;
+                }
+
+                if (best == null)
+                {
+                    best = candidate;
+                    continue;
+                }
+
+                int candidatePriority = candidate.settings.priority;
+                int bestPriority = best.settings.priority;
+                if (candidatePriority > bestPriority)
+                {
+                    best = candidate;
+                    continue;
+                }
+
+                if (candidatePriority == bestPriority && candidate.sequence > best.sequence)
+                {
+                    best = candidate;
+                }
+            }
+
+            return best;
+        }
+
+        private void RebuildRuntimeSettings()
+        {
+            currentFollowTarget = followTarget;
+            currentOffset = offset;
+            currentSmoothTime = Mathf.Max(0f, smoothTime);
+            currentClampX = clampX;
+            currentClampY = clampY;
+            currentXLimits = xLimits;
+            currentYLimits = yLimits;
+            currentOrthographicSize = baseOrthographicSize;
+            currentViewMode = defaultViewMode;
+            currentCustomViewportRect = defaultCustomViewportRect;
+
+            ActiveZoneOverride active = ResolveTopOverride();
+            ZoneOverrideSettings settings = active != null ? active.settings : null;
+            if (settings != null)
+            {
+                if (settings.overrideFollowTarget) currentFollowTarget = settings.followTarget;
+                if (settings.overrideOffset) currentOffset = settings.offset;
+                if (settings.overrideSmoothTime) currentSmoothTime = Mathf.Max(0f, settings.smoothTime);
+                if (settings.overrideClampX)
+                {
+                    currentClampX = settings.clampX;
+                    currentXLimits = settings.xLimits;
+                }
+
+                if (settings.overrideClampY)
+                {
+                    currentClampY = settings.clampY;
+                    currentYLimits = settings.yLimits;
+                }
+
+                if (settings.overrideOrthographicSize) currentOrthographicSize = Mathf.Max(0.01f, settings.orthographicSize);
+                if (settings.overrideViewMode)
+                {
+                    currentViewMode = settings.viewMode;
+                    currentCustomViewportRect = settings.customViewportRect;
+                }
+            }
+
+            ApplyCameraLensSettings();
+
+            followPosition = transform.position;
+            hasFollowPosition = true;
+            velocity = Vector3.zero;
+        }
+
+        private void ApplyCameraLensSettings()
+        {
+            if (cachedCamera == null)
+            {
+                return;
+            }
+
+            if (currentOrthographicSize > 0f)
+            {
+                cachedCamera.orthographicSize = currentOrthographicSize;
+            }
+
+            switch (currentViewMode)
+            {
+                case CameraViewMode.Landscape:
+                    cachedCamera.rect = baseCameraRect;
+                    break;
+
+                case CameraViewMode.Portrait:
+                {
+                    const float portraitWidth = 9f / 16f;
+                    float x = (1f - portraitWidth) * 0.5f;
+                    cachedCamera.rect = new Rect(x, 0f, portraitWidth, 1f);
+                    break;
+                }
+
+                case CameraViewMode.CustomRect:
+                {
+                    Rect r = currentCustomViewportRect;
+                    r.x = Mathf.Clamp01(r.x);
+                    r.y = Mathf.Clamp01(r.y);
+                    r.width = Mathf.Clamp(r.width, 0.01f, 1f - r.x);
+                    r.height = Mathf.Clamp(r.height, 0.01f, 1f - r.y);
+                    cachedCamera.rect = r;
+                    break;
+                }
+
+                default:
+                    cachedCamera.rect = baseCameraRect;
+                    break;
+            }
         }
 
         private void ApplyEarthquake(Vector3 basePosition)
         {
             float proximity = GetZoneProximity(target.position.x, out bool nowInside);
             HandleZoneState(nowInside);
+            UpdateEarthquakeSfx(proximity);
 
             if (!enableEarthquake || proximity <= 0f)
             {
@@ -146,6 +438,74 @@ namespace WaterBlob
             else
             {
                 transform.rotation = baseRotation;
+            }
+        }
+
+        private void EnsureEarthquakeSfxSource()
+        {
+            if (earthquakeSfxSource != null)
+            {
+                return;
+            }
+
+            earthquakeSfxSource = GetComponent<AudioSource>();
+            if (earthquakeSfxSource == null)
+            {
+                earthquakeSfxSource = gameObject.AddComponent<AudioSource>();
+            }
+
+            earthquakeSfxSource.playOnAwake = false;
+            earthquakeSfxSource.loop = true;
+        }
+
+        private void UpdateEarthquakeSfx(float proximity)
+        {
+            if (!enableEarthquakeSfx || earthquakeSfxSource == null || earthquakeSfxClip == null)
+            {
+                StopEarthquakeSfxImmediate();
+                return;
+            }
+
+            bool active = enableEarthquake && proximity > 0.0001f;
+            float proximityScale = earthquakeSfxScaleWithProximity ? Mathf.Clamp01(proximity) : 1f;
+            float scaledSfxMaxVolume = OneDropAudioSettings2D.ApplySfx(earthquakeSfxMaxVolume);
+            float targetVolume = active ? scaledSfxMaxVolume * proximityScale : 0f;
+            float fadeDuration = targetVolume > earthquakeSfxCurrentVolume ? earthquakeSfxFadeIn : earthquakeSfxFadeOut;
+            float step = fadeDuration > 0f
+                ? Mathf.Max(0.0001f, scaledSfxMaxVolume) * (Time.unscaledDeltaTime / fadeDuration)
+                : Mathf.Max(0.0001f, scaledSfxMaxVolume);
+
+            if (active && !earthquakeSfxSource.isPlaying)
+            {
+                earthquakeSfxSource.clip = earthquakeSfxClip;
+                earthquakeSfxSource.loop = true;
+                earthquakeSfxSource.playOnAwake = false;
+                earthquakeSfxSource.volume = 0f;
+                earthquakeSfxCurrentVolume = 0f;
+                earthquakeSfxSource.Play();
+            }
+
+            earthquakeSfxCurrentVolume = Mathf.MoveTowards(earthquakeSfxCurrentVolume, targetVolume, step);
+            earthquakeSfxSource.volume = earthquakeSfxCurrentVolume;
+
+            if (!active && earthquakeSfxSource.isPlaying && earthquakeSfxCurrentVolume <= 0.0005f)
+            {
+                earthquakeSfxSource.Stop();
+            }
+        }
+
+        private void StopEarthquakeSfxImmediate()
+        {
+            earthquakeSfxCurrentVolume = 0f;
+            if (earthquakeSfxSource == null)
+            {
+                return;
+            }
+
+            earthquakeSfxSource.volume = 0f;
+            if (earthquakeSfxSource.isPlaying)
+            {
+                earthquakeSfxSource.Stop();
             }
         }
 
@@ -242,6 +602,14 @@ namespace WaterBlob
             rotationIntensity = Mathf.Max(0f, rotationIntensity);
             rumbleIntensity = Mathf.Max(0f, rumbleIntensity);
             rumbleFrequency = Mathf.Max(0f, rumbleFrequency);
+            earthquakeSfxMaxVolume = Mathf.Clamp01(earthquakeSfxMaxVolume);
+            earthquakeSfxFadeIn = Mathf.Max(0f, earthquakeSfxFadeIn);
+            earthquakeSfxFadeOut = Mathf.Max(0f, earthquakeSfxFadeOut);
+
+            defaultCustomViewportRect.width = Mathf.Clamp(defaultCustomViewportRect.width, 0.01f, 1f);
+            defaultCustomViewportRect.height = Mathf.Clamp(defaultCustomViewportRect.height, 0.01f, 1f);
+            defaultCustomViewportRect.x = Mathf.Clamp(defaultCustomViewportRect.x, 0f, 1f - defaultCustomViewportRect.width);
+            defaultCustomViewportRect.y = Mathf.Clamp(defaultCustomViewportRect.y, 0f, 1f - defaultCustomViewportRect.height);
         }
     }
 }

@@ -56061,10 +56061,14 @@ MonoBehaviour:
   timerPulseFrequency: 1.65
   timerWobbleDegrees: 0.7
   timerWobbleFrequency: 0.95
-  pausePanel: {fileID: 1094200725}
-  pauseResumeButton: {fileID: 1660476330}
-  pauseRestartButton: {fileID: 282181175}
-  pauseExitButton: {fileID: 1199913326}
+  rebuildPauseMenuFromScratchAtRuntime: 1
+  pausePanel: {fileID: 0}
+  pauseResumeButton: {fileID: 0}
+  pauseRestartButton: {fileID: 0}
+  pauseSoundButton: {fileID: 0}
+  pauseExitButton: {fileID: 0}
+  pauseSoundPanel: {fileID: 0}
+  pauseSoundBackButton: {fileID: 0}
   gameOverPanel: {fileID: 1005815734}
   gameOverTimeLabel: {fileID: 1631565051}
   gameOverRestartButton: {fileID: 963398877}
@@ -56073,6 +56077,9 @@ MonoBehaviour:
   gameOverMusicSource: {fileID: 0}
   buttonClickSoundSource: {fileID: 0}
   navigationSoundSource: {fileID: 0}
+  sfxVolumeSlider: {fileID: 0}
+  musicVolumeSlider: {fileID: 0}
+  sfxSliderPreviewInterval: 0.08
 --- !u!114 &1272719587
 MonoBehaviour:
   m_ObjectHideFlags: 0

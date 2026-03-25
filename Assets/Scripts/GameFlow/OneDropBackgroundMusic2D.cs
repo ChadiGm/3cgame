@@ -31,6 +31,8 @@ namespace WaterBlob
         {
             ResolveReferences();
             SubscribeToGameManager();
+            OneDropAudioSettings2D.VolumesChanged += HandleGlobalVolumeChanged;
+            ApplyCurrentMusicVolume();
 
             if (playOnStart)
             {
@@ -41,12 +43,14 @@ namespace WaterBlob
         private void OnDisable()
         {
             UnsubscribeFromGameManager();
+            OneDropAudioSettings2D.VolumesChanged -= HandleGlobalVolumeChanged;
             StopFadeRoutine();
         }
 
         private void OnDestroy()
         {
             UnsubscribeFromGameManager();
+            OneDropAudioSettings2D.VolumesChanged -= HandleGlobalVolumeChanged;
             StopFadeRoutine();
         }
 
@@ -63,7 +67,7 @@ namespace WaterBlob
                 musicSource.clip = backgroundMusicClip;
             }
 
-            musicSource.volume = musicVolume;
+            musicSource.volume = OneDropAudioSettings2D.ApplyMusic(musicVolume);
             if (!musicSource.isPlaying)
             {
                 musicSource.Play();
@@ -127,7 +131,7 @@ namespace WaterBlob
             if (musicSource != null)
             {
                 musicSource.Stop();
-                musicSource.volume = musicVolume;
+                musicSource.volume = OneDropAudioSettings2D.ApplyMusic(musicVolume);
             }
 
             fadeRoutine = null;
@@ -164,7 +168,7 @@ namespace WaterBlob
 
             musicSource.playOnAwake = false;
             musicSource.loop = true;
-            musicSource.volume = musicVolume;
+            musicSource.volume = OneDropAudioSettings2D.ApplyMusic(musicVolume);
         }
 
         private void SubscribeToGameManager()
@@ -199,6 +203,21 @@ namespace WaterBlob
 
             StopCoroutine(fadeRoutine);
             fadeRoutine = null;
+        }
+
+        private void HandleGlobalVolumeChanged()
+        {
+            ApplyCurrentMusicVolume();
+        }
+
+        private void ApplyCurrentMusicVolume()
+        {
+            if (musicSource == null || fadeRoutine != null)
+            {
+                return;
+            }
+
+            musicSource.volume = OneDropAudioSettings2D.ApplyMusic(musicVolume);
         }
     }
 }
