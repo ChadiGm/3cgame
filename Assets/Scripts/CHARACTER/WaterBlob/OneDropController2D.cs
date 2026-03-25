@@ -13,6 +13,29 @@ namespace WaterBlob
     {
         [Header("References")]
         [SerializeField] private Transform visualRoot;
+        [SerializeField] private CharacterVFXController vfxController;
+
+        [Header("VFX")]
+        [SerializeField, Min(0f)] private float moveVfxSpeedThreshold = 0.15f;
+        [SerializeField, Min(0f)] private float moveVfxStopDelay = 0.12f;
+
+        [Header("Movement SFX")]
+        [SerializeField] private AudioSource movementSfxSource;
+        [SerializeField] private AudioSource actionSfxSource;
+        [SerializeField] private AudioClip movementSfxClip;
+        [SerializeField] private AudioClip movementSfxLeftClip;
+        [SerializeField] private AudioClip movementSfxRightClip;
+        [SerializeField] private AudioClip jumpSfxClip;
+        [SerializeField] private AudioClip slideSfxClip;
+        [SerializeField, Range(0f, 1f)] private float movementSfxVolume = 0.6f;
+        [SerializeField, Range(0f, 1f)] private float jumpSfxVolume = 0.8f;
+        [SerializeField, Range(0f, 1f)] private float slideSfxVolume = 0.85f;
+        [SerializeField, Min(0f)] private float movementSfxFadeIn = 0.08f;
+        [SerializeField, Min(0f)] private float movementSfxFadeOut = 0.18f;
+        [SerializeField] private bool movementSfxPlayWhileSliding = false;
+        [SerializeField] private bool movementSfxRequireGrounded = true;
+        [SerializeField] private bool muteMovementLoopDuringActionSfx = true;
+        [SerializeField, Min(0f)] private float actionSfxMoveLoopMuteExtraTime = 0.04f;
 
         [Header("Movement")]
         [SerializeField, Min(0f)] private float moveSpeed = 7f;
@@ -153,6 +176,12 @@ namespace WaterBlob
         private float wobbleVelocity;
         private bool jumpHeldLastFrame;
         private bool blobJumpHeldLastFrame;
+        private bool vfxGroundStateInitialized;
+        private bool moveVfxActive;
+        private float moveVfxStopTimer;
+        private float movementSfxCurrentVolume;
+        private int movementSfxDirection;
+        private float movementSfxMuteTimer;
         private readonly ContactPoint2D[] groundContactBuffer = new ContactPoint2D[24];
 
         private void Awake()
@@ -163,6 +192,11 @@ namespace WaterBlob
             waterResource = GetComponent<OneDropWaterResource2D>();
             blobInput = GetComponent<WaterBlobInput2D>();
             blobRenderer = GetComponent<WaterBlobMeshRenderer2D>();
+            if (vfxController == null)
+            {
+                vfxController = GetComponent<CharacterVFXController>();
+            }
+            InitializeAudioSources();
             if (waterResource == null)
             {
                 waterResource = gameObject.AddComponent<OneDropWaterResource2D>();
@@ -199,6 +233,7 @@ namespace WaterBlob
         private void OnDisable()
         {
             ResetDeformationVisual();
+            StopMovementSfxImmediate();
         }
 
         private void Update()
@@ -242,7 +277,7 @@ namespace WaterBlob
 
             if (isSliding && slideTimer <= 0f)
             {
-                isSliding = false;
+                SetSliding(false);
             }
 
             bool touchingClimbWall = touchingWall && IsWallClimbable(wallHit);
@@ -293,6 +328,8 @@ namespace WaterBlob
             ApplyRotation(groundHit);
             ApplyVisualFlip();
             ApplySoftBodyDeformation();
+            UpdateVfxState();
+            UpdateMovementSfx(Time.fixedDeltaTime);
 
             jumpPressed = false;
             groundedLastStep = grounded;
@@ -403,7 +440,7 @@ namespace WaterBlob
                 if (!pressingDown && touchingWall && (pressingUp || movingTowardWall || pushingIntoSomeWall))
                 {
                     isClimbing = true;
-                    isSliding = false;
+                    SetSliding(false);
                     climbWallDirection = wallDirection == 0 ? (int)Mathf.Sign(facingSign) : wallDirection;
                     rb.gravityScale = 0f;
                     rb.linearVelocity = Vector2.zero;
@@ -464,11 +501,13 @@ namespace WaterBlob
                 return;
             }
 
-            isSliding = true;
+            SetSliding(true);
             slideDirection = direction;
             slideTimer = slideDuration;
             slideCooldownTimer = slideCooldown;
             facingSign = direction;
+            float slideMuteDuration = Mathf.Max(slideDuration, slideSfxClip != null ? slideSfxClip.length : 0f);
+            PlayActionSfx(slideSfxClip, slideSfxVolume, slideMuteDuration);
             if (waterResource != null)
             {
                 waterResource.ConsumeSlide();
@@ -539,6 +578,11 @@ namespace WaterBlob
             jumpPulse = 1f;
             jumpIntervalTimer = minJumpInterval;
             postJumpGroundIgnoreTimer = postJumpGroundIgnoreTime;
+            PlayActionSfx(jumpSfxClip, jumpSfxVolume);
+            if (vfxController != null)
+            {
+                vfxController.OnJump();
+            }
 
             Vector2 v = rb.linearVelocity;
             v.y = 0f;
@@ -561,6 +605,11 @@ namespace WaterBlob
             wallDetachDirection = away;
             jumpIntervalTimer = minJumpInterval;
             postJumpGroundIgnoreTimer = postJumpGroundIgnoreTime;
+            PlayActionSfx(jumpSfxClip, jumpSfxVolume);
+            if (vfxController != null)
+            {
+                vfxController.OnJump();
+            }
 
             Vector2 v = rb.linearVelocity;
             v.y = 0f;
@@ -629,6 +678,247 @@ namespace WaterBlob
                         blobCharacter.PointBodies[i].gravityScale = g;
                     }
                 }
+            }
+        }
+
+        private void SetSliding(bool active)
+        {
+            if (isSliding == active)
+            {
+                return;
+            }
+
+            isSliding = active;
+            if (vfxController == null)
+            {
+                return;
+            }
+
+            if (active)
+            {
+                vfxController.OnSlideStart();
+            }
+            else
+            {
+                vfxController.OnSlideStop();
+            }
+        }
+
+        private void UpdateVfxState()
+        {
+            bool hasMoveIntent = Mathf.Abs(inputX) > 0.05f;
+            bool moving = !isSliding && (Mathf.Abs(rb.linearVelocity.x) > moveVfxSpeedThreshold || hasMoveIntent);
+            bool moveStarted = false;
+            bool moveStopped = false;
+            if (moving)
+            {
+                moveVfxStopTimer = moveVfxStopDelay;
+                if (!moveVfxActive)
+                {
+                    moveVfxActive = true;
+                    moveStarted = true;
+                }
+            }
+            else if (moveVfxActive)
+            {
+                moveVfxStopTimer = Mathf.Max(0f, moveVfxStopTimer - Time.fixedDeltaTime);
+                if (moveVfxStopTimer <= 0f)
+                {
+                    moveVfxActive = false;
+                    moveStopped = true;
+                }
+            }
+
+            if (vfxController != null)
+            {
+                if (vfxGroundStateInitialized && !groundedLastStep && grounded)
+                {
+                    vfxController.OnLand();
+                }
+
+                if (moveStarted)
+                {
+                    vfxController.OnMoveStart();
+                }
+                else if (moveStopped)
+                {
+                    vfxController.OnMoveStop();
+                }
+            }
+
+            vfxGroundStateInitialized = true;
+        }
+
+        private void InitializeAudioSources()
+        {
+            if (movementSfxSource == null)
+            {
+                movementSfxSource = GetComponent<AudioSource>();
+            }
+
+            if (movementSfxSource == null)
+            {
+                movementSfxSource = gameObject.AddComponent<AudioSource>();
+            }
+
+            movementSfxSource.playOnAwake = false;
+            movementSfxSource.loop = false;
+
+            if (actionSfxSource == null || actionSfxSource == movementSfxSource)
+            {
+                actionSfxSource = CreateActionSfxSource();
+            }
+
+            if (actionSfxSource != null)
+            {
+                actionSfxSource.playOnAwake = false;
+                actionSfxSource.loop = false;
+                if (actionSfxSource.volume <= 0f)
+                {
+                    actionSfxSource.volume = 1f;
+                }
+            }
+        }
+
+        private AudioSource CreateActionSfxSource()
+        {
+            const string actionSourceName = "WaterBlob_ActionSFX";
+            Transform child = transform.Find(actionSourceName);
+            if (child == null)
+            {
+                GameObject childObject = new(actionSourceName);
+                childObject.transform.SetParent(transform, false);
+                child = childObject.transform;
+            }
+
+            AudioSource source = child.GetComponent<AudioSource>();
+            if (source == null)
+            {
+                source = child.gameObject.AddComponent<AudioSource>();
+            }
+
+            source.playOnAwake = false;
+            source.loop = false;
+            source.volume = Mathf.Max(0.01f, source.volume);
+            return source;
+        }
+
+        private void UpdateMovementSfx(float dt)
+        {
+            if (movementSfxSource == null)
+            {
+                return;
+            }
+
+            int desiredDirection = ResolveMovementSfxDirection();
+            AudioClip desiredClip = ResolveMovementLoopClip(desiredDirection);
+            movementSfxMuteTimer = Mathf.Max(0f, movementSfxMuteTimer - dt);
+            bool actionMuteActive = movementSfxMuteTimer > 0f;
+            bool groundedGate = !movementSfxRequireGrounded || grounded;
+            bool slideGate = !isSliding || movementSfxPlayWhileSliding;
+            bool shouldPlay = desiredClip != null && !actionMuteActive && groundedGate && slideGate && moveVfxActive;
+            float targetVolume = shouldPlay ? movementSfxVolume : 0f;
+            float fadeDuration = targetVolume > movementSfxCurrentVolume ? movementSfxFadeIn : movementSfxFadeOut;
+            float step = fadeDuration > 0f ? Mathf.Max(0.0001f, movementSfxVolume) * (dt / fadeDuration) : Mathf.Max(0.0001f, movementSfxVolume);
+
+            if (shouldPlay && !movementSfxSource.isPlaying)
+            {
+                movementSfxSource.clip = desiredClip;
+                movementSfxSource.loop = true;
+                movementSfxSource.playOnAwake = false;
+                movementSfxSource.volume = 0f;
+                movementSfxCurrentVolume = 0f;
+                movementSfxSource.Play();
+            }
+            else if (shouldPlay && movementSfxSource.clip != desiredClip)
+            {
+                float keepVolume = movementSfxCurrentVolume;
+                movementSfxSource.clip = desiredClip;
+                movementSfxSource.Play();
+                movementSfxCurrentVolume = keepVolume;
+                movementSfxSource.volume = keepVolume;
+            }
+
+            movementSfxCurrentVolume = Mathf.MoveTowards(movementSfxCurrentVolume, targetVolume, step);
+            movementSfxSource.volume = movementSfxCurrentVolume;
+            movementSfxDirection = desiredDirection != 0 ? desiredDirection : movementSfxDirection;
+
+            if (!shouldPlay && movementSfxSource.isPlaying && movementSfxCurrentVolume <= 0.0005f)
+            {
+                movementSfxSource.Stop();
+            }
+        }
+
+        private int ResolveMovementSfxDirection()
+        {
+            if (Mathf.Abs(inputX) > 0.1f)
+            {
+                return inputX > 0f ? 1 : -1;
+            }
+
+            if (Mathf.Abs(rb.linearVelocity.x) > moveVfxSpeedThreshold)
+            {
+                return rb.linearVelocity.x > 0f ? 1 : -1;
+            }
+
+            if (movementSfxDirection != 0)
+            {
+                return movementSfxDirection;
+            }
+
+            return facingSign >= 0f ? 1 : -1;
+        }
+
+        private AudioClip ResolveMovementLoopClip(int direction)
+        {
+            if (direction < 0 && movementSfxLeftClip != null)
+            {
+                return movementSfxLeftClip;
+            }
+
+            if (direction > 0 && movementSfxRightClip != null)
+            {
+                return movementSfxRightClip;
+            }
+
+            return movementSfxClip;
+        }
+
+        private void PlayActionSfx(AudioClip clip, float volume, float movementMuteDurationOverride = -1f)
+        {
+            if (clip == null)
+            {
+                return;
+            }
+
+            if (muteMovementLoopDuringActionSfx)
+            {
+                float muteDuration = movementMuteDurationOverride >= 0f ? movementMuteDurationOverride : clip.length;
+                movementSfxMuteTimer = Mathf.Max(movementSfxMuteTimer, muteDuration + actionSfxMoveLoopMuteExtraTime);
+                StopMovementSfxImmediate();
+            }
+
+            AudioSource source = actionSfxSource != null ? actionSfxSource : movementSfxSource;
+            if (source == null)
+            {
+                return;
+            }
+
+            source.PlayOneShot(clip, Mathf.Clamp01(volume));
+        }
+
+        private void StopMovementSfxImmediate()
+        {
+            movementSfxCurrentVolume = 0f;
+            if (movementSfxSource == null)
+            {
+                return;
+            }
+
+            movementSfxSource.volume = 0f;
+            if (movementSfxSource.isPlaying)
+            {
+                movementSfxSource.Stop();
             }
         }
 

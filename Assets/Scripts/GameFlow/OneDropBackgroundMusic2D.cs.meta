@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 572c868cde2572d49a884348da1ae66d
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - gameManager: {instanceID: 0}
+  - musicSource: {instanceID: 0}
+  - backgroundMusicClip: {fileID: 8300000, guid: 8f1d727f4d25fb14faad8fe1d0212961, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
