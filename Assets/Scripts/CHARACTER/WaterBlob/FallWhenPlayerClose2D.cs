@@ -3,7 +3,7 @@ using UnityEngine;
 namespace WaterBlob
 {
     [DisallowMultipleComponent]
-    public class FallWhenPlayerClose2D : MonoBehaviour
+    public class FallWhenPlayerClose2D : MonoBehaviour, IPlayerRespawnResettable
     {
         [Header("Target")]
         [SerializeField] private Transform player;
@@ -256,6 +256,35 @@ namespace WaterBlob
         {
             triggerDistance = Mathf.Max(0.01f, triggerDistance);
             fallDelay = Mathf.Max(0f, fallDelay);
+        }
+
+        public void ResetForPlayerRespawn()
+        {
+            isTriggered = false;
+            delayActive = false;
+            delayTimer = 0f;
+            startStateInitialized = false;
+            playerWasInsideRange = false;
+            nextResolveTime = 0f;
+
+            if (rb2D != null)
+            {
+                rb2D.linearVelocity = Vector2.zero;
+                rb2D.angularVelocity = 0f;
+                rb2D.bodyType = initialBodyType2D;
+                rb2D.gravityScale = initialGravityScale2D;
+            }
+
+            if (rb3D != null)
+            {
+                rb3D.linearVelocity = Vector3.zero;
+                rb3D.angularVelocity = Vector3.zero;
+                rb3D.isKinematic = initialIsKinematic3D;
+                rb3D.useGravity = initialUseGravity3D;
+            }
+
+            ApplyHoldStateIfNeeded();
+            TryResolvePlayer(true);
         }
 
         private void OnDrawGizmosSelected()

@@ -389,8 +389,33 @@ namespace WaterBlob
 
             GameObject enemyRoot = touchedBody != null ? touchedBody.gameObject : touchedObject;
             SpawnEnemyTouchVaporization(enemyRoot.transform.position);
-            Destroy(enemyRoot);
+            DespawnOrDestroy(enemyRoot);
             ApplyTouchDamage();
+        }
+
+        private static void DespawnOrDestroy(GameObject target)
+        {
+            if (!TryDespawnRespawnable(target))
+            {
+                Destroy(target);
+            }
+        }
+
+        private static bool TryDespawnRespawnable(GameObject target)
+        {
+            if (target == null)
+            {
+                return false;
+            }
+
+            ResetOnPlayerRespawn2D resettable = target.GetComponentInParent<ResetOnPlayerRespawn2D>();
+            if (resettable == null)
+            {
+                return false;
+            }
+
+            resettable.Despawn();
+            return true;
         }
 
         private void ApplyTouchDamage()
@@ -607,7 +632,7 @@ namespace WaterBlob
             if (canBeDestroyed)
             {
                 SpawnVaporizationEffect(target.transform.position);
-                Destroy(target);
+                DespawnOrDestroy(target);
             }
 
             Destroy(gameObject);
@@ -704,6 +729,31 @@ namespace WaterBlob
         private static bool IsLayerInMask(int layer, LayerMask mask)
         {
             return (mask.value & (1 << layer)) != 0;
+        }
+
+        private static void DespawnOrDestroy(GameObject target)
+        {
+            if (!TryDespawnRespawnable(target))
+            {
+                Destroy(target);
+            }
+        }
+
+        private static bool TryDespawnRespawnable(GameObject target)
+        {
+            if (target == null)
+            {
+                return false;
+            }
+
+            ResetOnPlayerRespawn2D resettable = target.GetComponentInParent<ResetOnPlayerRespawn2D>();
+            if (resettable == null)
+            {
+                return false;
+            }
+
+            resettable.Despawn();
+            return true;
         }
     }
 }

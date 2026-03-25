@@ -37,6 +37,7 @@ namespace WaterBlob
         [Header("Visibility")]
         [SerializeField] private bool hideWhenPaused = true;
         [SerializeField] private bool hideWhenGameOver = true;
+        [SerializeField] private bool hideWhenGameplayInputBlocked = true;
 
         private readonly List<BlobIcon> icons = new();
         private RectTransform root;
@@ -183,6 +184,11 @@ namespace WaterBlob
             }
 
             bool visible = true;
+            if (hideWhenGameplayInputBlocked && OneDropGameManager2D.IsExternalGameplayInputBlocked)
+            {
+                visible = false;
+            }
+
             if (gameManager != null)
             {
                 if (hideWhenPaused && gameManager.IsPaused)

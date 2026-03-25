@@ -38,6 +38,9 @@ namespace WaterBlob
         private Quaternion initialSpawnRotation;
 
         public float WaterRatio => Mathf.Clamp01(currentWater / Mathf.Max(0.0001f, maxWater));
+        public float CurrentWater => currentWater;
+        public float MaxWater => maxWater;
+        public bool IsDead => dead;
         public int CurrentHealthPoints => currentHealthPoints;
         public int MaxHealthPoints => maxHealthPoints;
         public event Action<int, int> HealthChanged;
@@ -112,7 +115,12 @@ namespace WaterBlob
 
         public void ConsumeDamage()
         {
-            if (Consume(damageDrain))
+            ConsumeDamage(damageDrain);
+        }
+
+        public void ConsumeDamage(float amount)
+        {
+            if (Consume(amount))
             {
                 TriggerDamageFeedback();
             }
@@ -127,6 +135,28 @@ namespace WaterBlob
 
             currentWater = 0f;
             StartCoroutine(HandleDeath());
+        }
+
+        public bool RestoreWater(float amount)
+        {
+            if (dead || amount <= 0f)
+            {
+                return false;
+            }
+
+            float before = currentWater;
+            currentWater = Mathf.Min(maxWater, currentWater + amount);
+            return currentWater > before;
+        }
+
+        public bool RestoreWaterPercent(float normalizedPercent)
+        {
+            if (normalizedPercent <= 0f)
+            {
+                return false;
+            }
+
+            return RestoreWater(maxWater * normalizedPercent);
         }
 
         public void ConsumeMove(float deltaTime, bool isMoving)
@@ -304,6 +334,7 @@ namespace WaterBlob
 
             currentWater = maxWater;
             dead = false;
+            ResetOnPlayerRespawn2D.ResetAll();
         }
 
         private void ResolveCheckpointManagerAndRegisterPlayer()
@@ -364,6 +395,11 @@ namespace WaterBlob
             {
                 gameObject.AddComponent<OneDropGameUIManager2D>();
             }
+
+            if (FindObjectsByType<OneDropStartMenuUI2D>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length == 0)
+            {
+                gameObject.AddComponent<OneDropStartMenuUI2D>();
+            }
         }
 
         private void EnsureEditorUiAndFlowComponents()
@@ -381,6 +417,11 @@ namespace WaterBlob
             if (GetComponent<OneDropGameUIManager2D>() == null)
             {
                 gameObject.AddComponent<OneDropGameUIManager2D>();
+            }
+
+            if (GetComponent<OneDropStartMenuUI2D>() == null)
+            {
+                gameObject.AddComponent<OneDropStartMenuUI2D>();
             }
         }
 

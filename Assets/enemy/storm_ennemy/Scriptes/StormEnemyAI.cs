@@ -1,6 +1,7 @@
 using UnityEngine;
+using WaterBlob;
 
-public class StormEnemyAI : MonoBehaviour
+public class StormEnemyAI : MonoBehaviour, IPlayerRespawnResettable
 {
     private enum State { Patrol, Chase, Return }
 
@@ -197,5 +198,22 @@ public class StormEnemyAI : MonoBehaviour
     {
         if (anim == null) return;
         anim.SetBool(IsAngryHash, state == State.Chase);
+    }
+
+    public void ResetForPlayerRespawn()
+    {
+        isWaiting = false;
+        waitTimer = 0f;
+        desiredVelocity = Vector2.zero;
+        state = State.Patrol;
+        direction = transform.localScale.x >= 0f ? 1 : -1;
+
+        if (body != null)
+        {
+            body.linearVelocity = Vector2.zero;
+            body.angularVelocity = 0f;
+        }
+
+        UpdateAngerFlag();
     }
 }

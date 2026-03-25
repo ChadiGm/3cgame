@@ -1,7 +1,8 @@
 using System.Collections;
 using UnityEngine;
+using WaterBlob;
 
-public class FireEnemyAnimator : MonoBehaviour
+public class FireEnemyAnimator : MonoBehaviour, IPlayerRespawnResettable
 {
     [Header("Target")]
     [Tooltip("Target to measure distance from (defaults to Player tag if empty).")]
@@ -183,5 +184,20 @@ public class FireEnemyAnimator : MonoBehaviour
         }
 
         anim.Play("Idle", 0, 0f);
+    }
+
+    public void ResetForPlayerRespawn()
+    {
+        StopAllCoroutines();
+        isAttacking = false;
+        nextAttackTime = 0f;
+        hasLoggedMissingBullet = false;
+
+        if (movement != null)
+        {
+            movement.SetAttacking(false);
+        }
+
+        PlayIdleIfNeeded();
     }
 }

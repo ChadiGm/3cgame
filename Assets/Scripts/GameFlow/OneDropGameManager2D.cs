@@ -24,9 +24,11 @@ namespace WaterBlob
         private bool isPaused;
         private bool isGameOver;
         private bool subscribedToHealth;
+        private int externalInputBlockRequests;
 
         public static OneDropGameManager2D Instance => instance;
-        public static bool IsGameplayInputBlocked => instance != null && (instance.isPaused || instance.isGameOver);
+        public static bool IsGameplayInputBlocked => instance != null && (instance.isPaused || instance.isGameOver || instance.externalInputBlockRequests > 0);
+        public static bool IsExternalGameplayInputBlocked => instance != null && instance.externalInputBlockRequests > 0;
 
         public float ElapsedTime => elapsedTime;
         public bool IsPaused => isPaused;
@@ -68,6 +70,7 @@ namespace WaterBlob
             }
 
             UnsubscribeFromHealth();
+            externalInputBlockRequests = 0;
             if (isPaused && !isGameOver)
             {
                 Time.timeScale = 1f;
@@ -89,6 +92,11 @@ namespace WaterBlob
 
         private void Update()
         {
+            if (externalInputBlockRequests > 0)
+            {
+                return;
+            }
+
             if (enablePauseToggle && !isGameOver && ReadPausePressedThisFrame())
             {
                 TogglePause();
@@ -237,6 +245,22 @@ namespace WaterBlob
 #else
             Application.Quit();
 #endif
+        }
+
+        public void SetExternalGameplayInputBlocked(bool blocked)
+        {
+            if (blocked)
+            {
+                externalInputBlockRequests++;
+                return;
+            }
+
+            externalInputBlockRequests = Mathf.Max(0, externalInputBlockRequests - 1);
+        }
+
+        public void ClearExternalGameplayInputBlocks()
+        {
+            externalInputBlockRequests = 0;
         }
 
         private bool ReadPausePressedThisFrame()

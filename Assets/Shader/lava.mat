@@ -27,6 +27,7 @@ Material:
     m_Ints: []
     m_Floats:
     - _MovmentSpeed: 1.5
+    - _QueueControl: 0
     - _Scale: 3
     - _StartTime: 10
     m_Colors:

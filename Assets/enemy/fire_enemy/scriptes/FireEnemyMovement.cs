@@ -1,4 +1,5 @@
 using UnityEngine;
+using WaterBlob;
 
 /// <summary>
 /// Fire enemy movement brain:
@@ -7,7 +8,7 @@ using UnityEngine;
 /// - Return to patrol when player leaves
 /// </summary>
 [RequireComponent(typeof(Rigidbody2D))]
-public class FireEnemyMovement : MonoBehaviour
+public class FireEnemyMovement : MonoBehaviour, IPlayerRespawnResettable
 {
     private enum State { Patrol, Chase, Return }
 
@@ -245,6 +246,27 @@ public class FireEnemyMovement : MonoBehaviour
         if (value)
         {
             body.linearVelocity = new Vector2(0f, body.linearVelocity.y);
+        }
+    }
+
+    public void ResetForPlayerRespawn()
+    {
+        isAttacking = false;
+        isWaiting = false;
+        waitTimer = 0f;
+        desiredVelocity = Vector2.zero;
+        state = State.Patrol;
+        direction = transform.localScale.x >= 0f ? 1 : -1;
+
+        if (body != null)
+        {
+            body.linearVelocity = Vector2.zero;
+            body.angularVelocity = 0f;
+        }
+
+        if (setMoveBool && hasMoveBool && animator != null)
+        {
+            animator.SetBool(moveBoolHash, false);
         }
     }
 }

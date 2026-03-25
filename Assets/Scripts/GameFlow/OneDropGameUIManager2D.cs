@@ -73,6 +73,7 @@ namespace WaterBlob
         private Text sfxVolumeLabelText;
         private Text musicVolumeLabelText;
         private float lastSfxSliderPreviewTime = -99f;
+        private bool lastExternalGameplayBlockState;
 #if UNITY_EDITOR
         private bool editorBuildQueued;
 #endif
@@ -121,6 +122,7 @@ namespace WaterBlob
             SetGameOverPanelVisible(false, -1f);
             RefreshTimerLabel(gameManager != null ? gameManager.ElapsedTime : 0f);
             ApplyTimerVisibility();
+            lastExternalGameplayBlockState = OneDropGameManager2D.IsExternalGameplayInputBlocked;
         }
 
         private void OnEnable()
@@ -163,6 +165,13 @@ namespace WaterBlob
 
         private void Update()
         {
+            bool externalGameplayBlocked = OneDropGameManager2D.IsExternalGameplayInputBlocked;
+            if (externalGameplayBlocked != lastExternalGameplayBlockState)
+            {
+                lastExternalGameplayBlockState = externalGameplayBlocked;
+                ApplyTimerVisibility();
+            }
+
             UpdateTimerVisualMotion();
         }
 
@@ -1383,7 +1392,10 @@ namespace WaterBlob
                 return;
             }
 
-            bool showTimer = gameManager != null && !gameManager.IsPaused && !gameManager.IsGameOver;
+            bool showTimer = gameManager != null
+                && !gameManager.IsPaused
+                && !gameManager.IsGameOver
+                && !OneDropGameManager2D.IsExternalGameplayInputBlocked;
             timerLabel.gameObject.SetActive(showTimer);
             if (!showTimer)
             {
@@ -1599,6 +1611,12 @@ namespace WaterBlob
             if (pauseSoundPanel == null)
             {
                 return;
+            }
+
+            RectTransform pauseMenuCard = ResolvePauseMenuCard();
+            if (pauseMenuCard != null)
+            {
+                pauseMenuCard.gameObject.SetActive(!visible);
             }
 
             pauseSoundPanel.SetActive(visible);
