@@ -21,6 +21,7 @@ public class StormEnemyAI : MonoBehaviour, IPlayerRespawnResettable
     [SerializeField] private float exitBuffer = 1.5f;
     [SerializeField] private float chaseSpeedMultiplier = 1.1f;
     [SerializeField] private float attackRange = 2.75f;
+    [SerializeField, Min(0f)] private float horizontalStopDistance = 0.2f;
 
     [Header("Return")]
     [SerializeField] private float returnSpeedMultiplier = 1.1f;
@@ -204,7 +205,14 @@ public class StormEnemyAI : MonoBehaviour, IPlayerRespawnResettable
             return;
         }
 
-        float chaseDir = Mathf.Sign(target.position.x - transform.position.x);
+        float deltaX = target.position.x - transform.position.x;
+        if (Mathf.Abs(deltaX) <= horizontalStopDistance)
+        {
+            desiredVelocity = new Vector2(0f, body.linearVelocity.y);
+            return;
+        }
+
+        float chaseDir = Mathf.Sign(deltaX);
         desiredVelocity = new Vector2(chaseDir * speed * chaseSpeedMultiplier, body.linearVelocity.y);
         Flip((int)chaseDir);
     }
