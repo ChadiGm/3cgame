@@ -179,9 +179,34 @@ MonoBehaviour:
   speed: 3
   patrolDistance: 5
   waitTime: 2
+  leftPoint: {fileID: 0}
+  rightPoint: {fileID: 0}
   target: {fileID: 0}
-  angryDistance: 3
-  angryExitDistance: 3.5
+  detectionRange: 4
+  exitBuffer: 1.5
+  chaseSpeedMultiplier: 1.1
+  attackRange: 2.75
+  returnSpeedMultiplier: 1.1
+  returnSnapDistance: 0.1
+  attackCooldown: 1.25
+  attackWindup: 0.08
+  lightningAnimationLoops: 2
+  lightningFrameDuration: 0.06
+  lightningLocalOffset: {x: 0, y: -2}
+  lightningFrames:
+  - {fileID: 21300000, guid: 0a7440ff222db6144be37ffac05cfabe, type: 3}
+  - {fileID: 21300000, guid: de812490b97dc5b49aeb51a88caed36e, type: 3}
+  - {fileID: 21300000, guid: 39533ace40011a947a3683993446e0d6, type: 3}
+  - {fileID: 21300000, guid: 149544e4f6fc7d34fb9d0c76c4ba2da5, type: 3}
+  - {fileID: 21300000, guid: 6c9e442f6c81bf94680b3a118aaf742f, type: 3}
+  impactVfxPrefab: {fileID: 0}
+  impactVfxLifetime: 0.35
+  lightningSfx: {fileID: 8300000, guid: 1d7bd78fb3b40e44b9c143e50f5467c5, type: 3}
+  lightningSfxVolume: 0.9
+  lightningAudioSource: {fileID: 0}
+  playerTag: Player
+  lightningDamageRadius: 0.85
+  damageOnImpact: 1
 --- !u!95 &636942803956640395
 Animator:
   serializedVersion: 7
