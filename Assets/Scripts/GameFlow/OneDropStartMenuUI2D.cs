@@ -172,6 +172,7 @@ namespace WaterBlob
         private void Awake()
         {
             ResolveReferences();
+            EnsureBackgroundMusicController();
             TryResolveBackgroundSpriteByName();
             BuildUi();
             if (Application.isPlaying)
@@ -203,6 +204,7 @@ namespace WaterBlob
             }
 
             ResolveReferences();
+            EnsureBackgroundMusicController();
             TryResolveBackgroundSpriteByName();
             BuildUi();
             OneDropAudioSettings2D.VolumesChanged += HandleVolumeSettingsChanged;
@@ -294,6 +296,24 @@ namespace WaterBlob
 #endif
                     targetEventSystem = eventSystemGo.GetComponent<EventSystem>();
                 }
+            }
+        }
+
+        private void EnsureBackgroundMusicController()
+        {
+            if (!Application.isPlaying)
+            {
+                return;
+            }
+
+            if (FindFirstObjectByType<OneDropBackgroundMusic2D>(FindObjectsInactive.Include) != null)
+            {
+                return;
+            }
+
+            if (GetComponent<OneDropBackgroundMusic2D>() == null)
+            {
+                gameObject.AddComponent<OneDropBackgroundMusic2D>();
             }
         }
 

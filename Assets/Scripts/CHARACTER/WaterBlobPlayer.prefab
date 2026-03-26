@@ -55,6 +55,10 @@ GameObject:
   - component: {fileID: 3249781218293355111}
   - component: {fileID: 1026113646115875984}
   - component: {fileID: 5639734112192655438}
+  - component: {fileID: -4397128625859880244}
+  - component: {fileID: 8351809215101353976}
+  - component: {fileID: -1406799664709393224}
+  - component: {fileID: 7775796369360615403}
   m_Layer: 0
   m_Name: WaterBlobPlayer
   m_TagString: Player
@@ -380,35 +384,8 @@ MonoBehaviour:
   secondarySpringDamping: 0.82
   radialStiffness: 12
   radialDamping: 8.5
-  maxHorizontalSpeed: 100
-  moveResponse: 0
-  maxControlForce: 0
-  pointMoveAssist: 0.2
-  rollTorque: 24
-  directionalLeanStrength: 1.35
-  invertDirectionalRoll: 1
-  slideReleaseFalloff: 0
-  slideMinSpeedForFalloff: 0.35
-  maxAngularVelocityDeg: 140
-  inputRollSpeedDeg: 0
-  velocityRollInfluence: 0
-  maxVelocityRollContribution: 24
-  angularAccelGrounded: 0
-  angularAccelAir: 0
-  angularDecelGrounded: 0
-  angularDecelAir: 0
-  noInputAngularDragBoost: 1.65
-  jumpImpulse: 20
-  jumpCompressionImpulse: 8
-  jumpCompressionPointAssist: 0.5
-  jumpLaunchBoost: 1.3
-  pointJumpAssist: 0.2
-  airControl: 0.7
-  coyoteTime: 0.16
-  jumpBufferTime: 0.16
-  groundMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
+  pointVelocityCarry: 0.2
+  maxPointCarrySpeed: 8
   bounciness: 0.24
   friction: 0.1
 --- !u!114 &7543062347427138492
@@ -489,12 +466,33 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WaterBlob.OneDropController2D
   visualRoot: {fileID: 0}
+  vfxController: {fileID: 0}
+  moveVfxSpeedThreshold: 0.15
+  moveVfxStopDelay: 0.12
+  movementSfxSource: {fileID: 0}
+  actionSfxSource: {fileID: 0}
+  movementSfxClip: {fileID: 0}
+  movementSfxLeftClip: {fileID: 0}
+  movementSfxRightClip: {fileID: 0}
+  jumpSfxClip: {fileID: 0}
+  slideSfxClip: {fileID: 0}
+  movementSfxVolume: 0.6
+  jumpSfxVolume: 0.8
+  slideSfxVolume: 0.85
+  movementSfxFadeIn: 0.08
+  movementSfxFadeOut: 0.18
+  movementSfxPlayWhileSliding: 0
+  movementSfxRequireGrounded: 1
+  muteMovementLoopDuringActionSfx: 1
+  actionSfxMoveLoopMuteExtraTime: 0.04
   moveSpeed: 20
   acceleration: 30
   minAccelerationFromSpeed: 4
   jumpForce: 50
   postJumpGroundIgnoreTime: 0.1
   minJumpInterval: 0.1
+  jumpPointImpulseScale: 0.22
+  wallJumpPointImpulseScale: 0.18
   overrideRigidbodyDamping: 1
   linearDamping: 0
   angularDamping: 0.05
@@ -524,11 +522,11 @@ MonoBehaviour:
   groundProbeHeightFactor: 0.22
   castWidthFactor: 0.95
   castHeightFactor: 0.95
+  jumpMaxGroundAngle: 65
   rotationLerpSpeed: 12
   maxGroundAngle: 35
   sideNormalMinX: 0.72
   sideNormalMaxY: 0.45
-  deformLerpSpeed: 14
   idleGroundSquash: 0.08
   idleGroundSpread: 0.06
   runSquash: 0.12
@@ -545,6 +543,14 @@ MonoBehaviour:
   wallAdhesionStretch: 0.1
   wallDetachStretch: 0.12
   visualMomentumOffset: 0.09
+  movementResponseDelay: 0.06
+  deformationSpring: 58
+  deformationDamping: 10
+  wobbleSpring: 44
+  wobbleDamping: 7.5
+  accelerationWobble: 0.05
+  impactWobble: 0.12
+  maxWobble: 0.24
   ceilingMask:
     serializedVersion: 2
     m_Bits: 0
@@ -606,6 +612,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d853de1ebb969e4a8640128e82921fb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  maxHealthPoints: 4
+  gameRestartDelay: 0.6
   maxWater: 500
   moveDrainPerSecond: 3.5
   moveSpeedThreshold: 0.2
@@ -615,7 +623,6 @@ MonoBehaviour:
   damageDrain: 20
   deathVaporEffectPrefab: {fileID: 985483039366664255, guid: f91edac4d13fc4343ba96bb6a843ad05, type: 3}
   disableDelay: 0.15
-  respawnOnDeath: 1
   respawnDelay: 3
   useCheckpointManager: 1
   checkpointManager: {fileID: 0}
@@ -650,3 +657,180 @@ MonoBehaviour:
   duration: 0.18
   shakeOffset: 0.06
   shakeFrequency: 18
+--- !u!114 &-4397128625859880244
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7141965717303133325}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f45ddaf94e847c3aad8a58e5d6935a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  healthSource: {fileID: 0}
+  targetCanvas: {fileID: 0}
+  playerVisual: {fileID: 0}
+  hudOffset: {x: 28, y: -28}
+  iconSize: 40
+  iconSpacing: 8
+  syncColorWithPlayer: 1
+  activeTint: {r: 0.19, g: 0.72, b: 1, a: 1}
+  lostTint: {r: 0.55, g: 0.72, b: 0.82, a: 0.85}
+  lostAlpha: 0.2
+  syncInsideFillWithWater: 1
+  lostFillAmount: 0.12
+  loseAnimDuration: 0.34
+  loseWobbleDegrees: 14
+  loseOvershoot: 0.2
+  restoreAnimDuration: 0.2
+  hideWhenPaused: 1
+  hideWhenGameOver: 1
+  hideWhenGameplayInputBlocked: 1
+--- !u!114 &8351809215101353976
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7141965717303133325}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f842f907b22f458fb80e476a7df84d70, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerHealth: {fileID: 0}
+  enablePauseToggle: 1
+  pauseKey: 27
+--- !u!114 &-1406799664709393224
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7141965717303133325}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d20b489b10034a79951c12594d345a77, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  gameManager: {fileID: 8351809215101353976}
+  targetCanvas: {fileID: 0}
+  targetEventSystem: {fileID: 0}
+  timerLabel: {fileID: 0}
+  timerOffset: {x: 0, y: -26}
+  timerColor: {r: 0.78, g: 0.94, b: 1, a: 1}
+  timerSizePercent: 122
+  timerUseMonospaceEffect: 1
+  timerMonospaceEm: 0.62
+  timerPulseAmplitude: 0.02
+  timerPulseFrequency: 1.65
+  timerWobbleDegrees: 0.7
+  timerWobbleFrequency: 0.95
+  rebuildPauseMenuFromScratchAtRuntime: 1
+  pausePanel: {fileID: 0}
+  pauseResumeButton: {fileID: 0}
+  pauseRestartButton: {fileID: 0}
+  pauseSoundButton: {fileID: 0}
+  pauseExitButton: {fileID: 0}
+  pauseSoundPanel: {fileID: 0}
+  pauseSoundBackButton: {fileID: 0}
+  gameOverPanel: {fileID: 0}
+  gameOverTimeLabel: {fileID: 0}
+  gameOverRestartButton: {fileID: 0}
+  gameOverExitButton: {fileID: 0}
+  pauseMenuMusicSource: {fileID: 0}
+  gameOverMusicSource: {fileID: 0}
+  buttonClickSoundSource: {fileID: 0}
+  navigationSoundSource: {fileID: 0}
+  sfxVolumeSlider: {fileID: 0}
+  musicVolumeSlider: {fileID: 0}
+  sfxSliderPreviewInterval: 0.08
+--- !u!114 &7775796369360615403
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7141965717303133325}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2cd698a978def8d44976af0445cc6dae, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  gameManager: {fileID: 8351809215101353976}
+  targetCanvas: {fileID: 0}
+  targetEventSystem: {fileID: 0}
+  showOnStart: 1
+  backgroundSprite: {fileID: 21300000, guid: 24cc26d1012b4c644b9f08c4358bf699, type: 3}
+  backgroundSpriteName: One Drop Concept ui bg
+  backgroundSize: {x: 1920, y: 1080}
+  backgroundPosition: {x: 0, y: 0}
+  backgroundTint: {r: 1, g: 1, b: 1, a: 0.92}
+  optionsBackgroundSprite: {fileID: 0}
+  optionsBackgroundTint: {r: 0.78, g: 0.9, b: 1, a: 0.92}
+  creditsBackgroundSprite: {fileID: 0}
+  creditsBackgroundTint: {r: 1, g: 0.88, b: 0.76, a: 0.92}
+  overlayColor: {r: 0, g: 0, b: 0, a: 0.38}
+  titleText: ONE DROP
+  titleFontSize: 56
+  titleColor: {r: 0.94, g: 0.98, b: 1, a: 1}
+  mainCardSize: {x: 560, y: 710}
+  mainCardPosition: {x: 0, y: 0}
+  mainCardColor: {r: 0.08, g: 0.11, b: 0.16, a: 0.62}
+  buttonFont: {fileID: 0}
+  buttonFontSize: 34
+  newGameButtonStyle:
+    label: NEW GAME
+    anchoredPosition: {x: 0, y: 145}
+    size: {x: 380, y: 82}
+    boxColor: {r: 0.2, g: 0.52, b: 0.9, a: 0.85}
+    textColor: {r: 1, g: 1, b: 1, a: 1}
+  optionsButtonStyle:
+    label: OPTIONS
+    anchoredPosition: {x: 0, y: 35}
+    size: {x: 380, y: 82}
+    boxColor: {r: 0.2, g: 0.72, b: 0.48, a: 0.85}
+    textColor: {r: 1, g: 1, b: 1, a: 1}
+  creditsButtonStyle:
+    label: CREDIT
+    anchoredPosition: {x: 0, y: -75}
+    size: {x: 380, y: 82}
+    boxColor: {r: 0.89, g: 0.58, b: 0.21, a: 0.85}
+    textColor: {r: 1, g: 1, b: 1, a: 1}
+  exitButtonStyle:
+    label: EXIT
+    anchoredPosition: {x: 0, y: -185}
+    size: {x: 380, y: 82}
+    boxColor: {r: 0.82, g: 0.26, b: 0.26, a: 0.88}
+    textColor: {r: 1, g: 1, b: 1, a: 1}
+  optionsCardSize: {x: 560, y: 520}
+  optionsCardPosition: {x: 0, y: 0}
+  optionsCardColor: {r: 0.09, g: 0.13, b: 0.2, a: 0.7}
+  optionsTitleColor: {r: 0.93, g: 0.98, b: 1, a: 1}
+  sliderBackgroundColor: {r: 0.15, g: 0.17, b: 0.22, a: 0.85}
+  sliderFillColor: {r: 0.25, g: 0.65, b: 1, a: 0.95}
+  sliderHandleColor: {r: 0.92, g: 0.97, b: 1, a: 1}
+  optionsTextColor: {r: 0.94, g: 0.97, b: 1, a: 1}
+  optionsBackButtonStyle:
+    label: BACK
+    anchoredPosition: {x: 0, y: -185}
+    size: {x: 300, y: 72}
+    boxColor: {r: 0.3, g: 0.34, b: 0.55, a: 0.9}
+    textColor: {r: 1, g: 1, b: 1, a: 1}
+  creditsCardSize: {x: 560, y: 520}
+  creditsCardPosition: {x: 0, y: 0}
+  creditsCardColor: {r: 0.09, g: 0.13, b: 0.2, a: 0.7}
+  creditsTitleColor: {r: 0.93, g: 0.98, b: 1, a: 1}
+  creditsBackButtonStyle:
+    label: BACK
+    anchoredPosition: {x: 0, y: -185}
+    size: {x: 300, y: 72}
+    boxColor: {r: 0.3, g: 0.34, b: 0.55, a: 0.9}
+    textColor: {r: 1, g: 1, b: 1, a: 1}
+  uiSfxSource: {fileID: 0}
+  buttonClickSfx: {fileID: 0}
+  buttonHoverSfx: {fileID: 0}
+  uiSfxVolume: 1
+  hoverSfxInterval: 0.08

@@ -14,11 +14,12 @@ namespace WaterBlob
         [Header("Playback")]
         [SerializeField, Range(0f, 1f)] private float musicVolume = 0.5f;
         [SerializeField] private bool playOnStart = true;
-        [SerializeField] private bool pauseWithGame = true;
+        [SerializeField] private bool pauseWithGame = false;
         [SerializeField] private bool stopOnGameOver = true;
         [SerializeField, Min(0f)] private float gameOverFadeOutDuration = 0.5f;
 
         private bool isGameOver;
+        private bool adoptedSceneMusicSource;
         private Coroutine fadeRoutine;
 
         private void Awake()
@@ -30,6 +31,7 @@ namespace WaterBlob
         private void OnEnable()
         {
             ResolveReferences();
+            ConfigureSource();
             SubscribeToGameManager();
             OneDropAudioSettings2D.VolumesChanged += HandleGlobalVolumeChanged;
             ApplyCurrentMusicVolume();
@@ -54,9 +56,24 @@ namespace WaterBlob
             StopFadeRoutine();
         }
 
+        private void Update()
+        {
+            ApplyCurrentMusicVolume();
+        }
+
         public void PlayMusic()
         {
-            if (musicSource == null || backgroundMusicClip == null)
+            if (musicSource == null)
+            {
+                return;
+            }
+
+            if (backgroundMusicClip == null)
+            {
+                backgroundMusicClip = musicSource.clip;
+            }
+
+            if (backgroundMusicClip == null)
             {
                 return;
             }
@@ -85,7 +102,7 @@ namespace WaterBlob
             {
                 musicSource.Pause();
             }
-            else if (backgroundMusicClip != null)
+            else if (backgroundMusicClip != null || musicSource.clip != null)
             {
                 musicSource.UnPause();
             }
@@ -155,7 +172,19 @@ namespace WaterBlob
 
             if (musicSource == null)
             {
+                musicSource = FindBestSceneMusicSource();
+                adoptedSceneMusicSource = musicSource != null;
+            }
+
+            if (musicSource == null)
+            {
                 musicSource = gameObject.AddComponent<AudioSource>();
+                adoptedSceneMusicSource = false;
+            }
+
+            if (backgroundMusicClip == null && musicSource != null && musicSource.clip != null)
+            {
+                backgroundMusicClip = musicSource.clip;
             }
         }
 
@@ -166,9 +195,94 @@ namespace WaterBlob
                 return;
             }
 
-            musicSource.playOnAwake = false;
-            musicSource.loop = true;
+            if (!adoptedSceneMusicSource)
+            {
+                musicSource.playOnAwake = false;
+                musicSource.loop = true;
+            }
+
+            musicSource.ignoreListenerPause = true;
             musicSource.volume = OneDropAudioSettings2D.ApplyMusic(musicVolume);
+        }
+
+        private AudioSource FindBestSceneMusicSource()
+        {
+            AudioSource[] allSources = FindObjectsByType<AudioSource>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            AudioSource bestSource = null;
+            int bestScore = int.MinValue;
+
+            for (int i = 0; i < allSources.Length; i++)
+            {
+                AudioSource candidate = allSources[i];
+                if (candidate == null || candidate == musicSource || candidate.gameObject == gameObject || candidate.clip == null)
+                {
+                    continue;
+                }
+
+                int candidateScore = ScoreCandidate(candidate);
+                if (candidateScore > bestScore)
+                {
+                    bestScore = candidateScore;
+                    bestSource = candidate;
+                }
+            }
+
+            return bestScore >= 20 ? bestSource : null;
+        }
+
+        private static int ScoreCandidate(AudioSource candidate)
+        {
+            int score = 0;
+            AudioClip clip = candidate.clip;
+            if (clip == null)
+            {
+                return score;
+            }
+
+            string sourceName = candidate.gameObject.name;
+            if (!string.IsNullOrEmpty(sourceName))
+            {
+                string lowered = sourceName.ToLowerInvariant();
+                if (lowered.Contains("music") || lowered.Contains("bgm") || lowered.Contains("theme") || lowered.Contains("ambient"))
+                {
+                    score += 30;
+                }
+            }
+
+            if (clip.length >= 20f)
+            {
+                score += 40;
+            }
+            else if (clip.length >= 8f)
+            {
+                score += 20;
+            }
+            else
+            {
+                score += 5;
+            }
+
+            if (candidate.loop)
+            {
+                score += 25;
+            }
+
+            if (candidate.playOnAwake)
+            {
+                score += 10;
+            }
+
+            if (candidate.isPlaying)
+            {
+                score += 20;
+            }
+
+            if (candidate.spatialBlend <= 0.05f)
+            {
+                score += 5;
+            }
+
+            return score;
         }
 
         private void SubscribeToGameManager()

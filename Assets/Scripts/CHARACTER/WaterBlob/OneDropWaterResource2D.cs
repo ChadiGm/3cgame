@@ -400,6 +400,11 @@ namespace WaterBlob
             {
                 gameObject.AddComponent<OneDropStartMenuUI2D>();
             }
+
+            if (FindObjectsByType<OneDropBackgroundMusic2D>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length == 0)
+            {
+                gameObject.AddComponent<OneDropBackgroundMusic2D>();
+            }
         }
 
         private void EnsureEditorUiAndFlowComponents()
@@ -422,6 +427,11 @@ namespace WaterBlob
             if (GetComponent<OneDropStartMenuUI2D>() == null)
             {
                 gameObject.AddComponent<OneDropStartMenuUI2D>();
+            }
+
+            if (GetComponent<OneDropBackgroundMusic2D>() == null)
+            {
+                gameObject.AddComponent<OneDropBackgroundMusic2D>();
             }
         }
 

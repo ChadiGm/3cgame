@@ -54,6 +54,8 @@ namespace WaterBlob
         [SerializeField] private AudioSource gameOverMusicSource;
         [SerializeField] private AudioSource buttonClickSoundSource;
         [SerializeField] private AudioSource navigationSoundSource;
+        [SerializeField] private bool useSharedButtonSfxForNavigation = true;
+        [SerializeField] private AudioClip defaultMenuButtonSfx;
 
         [Header("Audio Settings")]
         [SerializeField] private Slider sfxVolumeSlider;
@@ -70,6 +72,7 @@ namespace WaterBlob
         private float gameOverMusicBaseVolume = 1f;
         private float buttonClickBaseVolume = 1f;
         private float navigationBaseVolume = 1f;
+        private static AudioClip generatedDefaultMenuSfxClip;
         private Text sfxVolumeLabelText;
         private Text musicVolumeLabelText;
         private float lastSfxSliderPreviewTime = -99f;
@@ -113,6 +116,7 @@ namespace WaterBlob
             EnsureEventSystem();
             EnsureRuntimeUi();
             CacheTimerRect();
+            EnsureMenuSfxSourcesConfigured();
             WireButtons();
             CacheAudioBaseVolumes();
             WireVolumeControls();
@@ -128,6 +132,8 @@ namespace WaterBlob
         private void OnEnable()
         {
             ResolveGameManager();
+            EnsureMenuSfxSourcesConfigured();
+            CacheAudioBaseVolumes();
             WireVolumeControls();
             OneDropAudioSettings2D.VolumesChanged += HandleGlobalAudioVolumesChanged;
             ApplyMenuAudioVolumes();
@@ -1566,7 +1572,8 @@ namespace WaterBlob
 
         private void PlayNavigationSound()
         {
-            PlayOneShotFromSource(navigationSoundSource);
+            AudioSource source = useSharedButtonSfxForNavigation ? buttonClickSoundSource : navigationSoundSource;
+            PlayOneShotFromSource(source != null ? source : buttonClickSoundSource);
         }
 
         private void PlayButtonClickSound()
@@ -1637,7 +1644,16 @@ namespace WaterBlob
             pauseMenuMusicBaseVolume = pauseMenuMusicSource != null ? Mathf.Clamp01(pauseMenuMusicSource.volume) : 1f;
             gameOverMusicBaseVolume = gameOverMusicSource != null ? Mathf.Clamp01(gameOverMusicSource.volume) : 1f;
             buttonClickBaseVolume = buttonClickSoundSource != null ? Mathf.Clamp01(buttonClickSoundSource.volume) : 1f;
-            navigationBaseVolume = navigationSoundSource != null ? Mathf.Clamp01(navigationSoundSource.volume) : 1f;
+            if (navigationSoundSource != null)
+            {
+                navigationBaseVolume = ReferenceEquals(navigationSoundSource, buttonClickSoundSource)
+                    ? buttonClickBaseVolume
+                    : Mathf.Clamp01(navigationSoundSource.volume);
+            }
+            else
+            {
+                navigationBaseVolume = buttonClickBaseVolume;
+            }
         }
 
         private void ApplyMenuAudioVolumes()
@@ -1659,8 +1675,102 @@ namespace WaterBlob
 
             if (navigationSoundSource != null)
             {
-                navigationSoundSource.volume = OneDropAudioSettings2D.ApplySfx(navigationBaseVolume);
+                float navBase = ReferenceEquals(navigationSoundSource, buttonClickSoundSource) ? buttonClickBaseVolume : navigationBaseVolume;
+                navigationSoundSource.volume = OneDropAudioSettings2D.ApplySfx(navBase);
             }
+        }
+
+        private void EnsureMenuSfxSourcesConfigured()
+        {
+            if (buttonClickSoundSource == null)
+            {
+                buttonClickSoundSource = GetOrCreateUiSfxSource("MenuButtonSfx_Auto");
+            }
+
+            ConfigureSfxSource(buttonClickSoundSource);
+            if (buttonClickSoundSource != null && buttonClickSoundSource.clip == null)
+            {
+                buttonClickSoundSource.clip = ResolveDefaultMenuButtonClip();
+            }
+
+            if (useSharedButtonSfxForNavigation)
+            {
+                navigationSoundSource = buttonClickSoundSource;
+            }
+            else if (navigationSoundSource == null)
+            {
+                navigationSoundSource = GetOrCreateUiSfxSource("MenuNavigationSfx_Auto");
+            }
+
+            ConfigureSfxSource(navigationSoundSource);
+            if (navigationSoundSource != null && navigationSoundSource.clip == null)
+            {
+                navigationSoundSource.clip = buttonClickSoundSource != null && buttonClickSoundSource.clip != null
+                    ? buttonClickSoundSource.clip
+                    : ResolveDefaultMenuButtonClip();
+            }
+        }
+
+        private AudioSource GetOrCreateUiSfxSource(string objectName)
+        {
+            Transform existing = transform.Find(objectName);
+            AudioSource source = existing != null ? existing.GetComponent<AudioSource>() : null;
+            if (source != null)
+            {
+                return source;
+            }
+
+            GameObject sourceGo = new(objectName, typeof(AudioSource));
+            sourceGo.transform.SetParent(transform, false);
+            return sourceGo.GetComponent<AudioSource>();
+        }
+
+        private static void ConfigureSfxSource(AudioSource source)
+        {
+            if (source == null)
+            {
+                return;
+            }
+
+            source.playOnAwake = false;
+            source.loop = false;
+            source.spatialBlend = 0f;
+            source.ignoreListenerPause = true;
+        }
+
+        private AudioClip ResolveDefaultMenuButtonClip()
+        {
+            if (defaultMenuButtonSfx != null)
+            {
+                return defaultMenuButtonSfx;
+            }
+
+            if (generatedDefaultMenuSfxClip == null)
+            {
+                generatedDefaultMenuSfxClip = CreateFallbackMenuSfxClip();
+            }
+
+            return generatedDefaultMenuSfxClip;
+        }
+
+        private static AudioClip CreateFallbackMenuSfxClip()
+        {
+            const int sampleRate = 44100;
+            const float duration = 0.06f;
+            int sampleCount = Mathf.Max(1, Mathf.RoundToInt(sampleRate * duration));
+            float[] samples = new float[sampleCount];
+
+            const float frequency = 1250f;
+            for (int i = 0; i < sampleCount; i++)
+            {
+                float t = i / (float)sampleRate;
+                float envelope = Mathf.Exp(-34f * t);
+                samples[i] = Mathf.Sin(2f * Mathf.PI * frequency * t) * envelope * 0.35f;
+            }
+
+            AudioClip clip = AudioClip.Create("OneDrop_MenuSfx_Auto", sampleCount, 1, sampleRate, false);
+            clip.SetData(samples, 0);
+            return clip;
         }
 
         private void HandleGlobalAudioVolumesChanged()
