@@ -4219,6 +4219,7 @@ GameObject:
   - component: {fileID: 110751407}
   - component: {fileID: 110751409}
   - component: {fileID: 110751410}
+  - component: {fileID: 110751411}
   m_Layer: 3
   m_Name: jungle (13)
   m_TagString: Untagged
@@ -4411,6 +4412,22 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
+--- !u!114 &110751411
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 110751405}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f425f360927e5f469e720f2983ac292, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  reactivateOnRespawn: 1
+  resetTransform: 1
+  resetRigidbodies: 1
+  callCustomResetHandlers: 1
 --- !u!1 &115622624
 GameObject:
   m_ObjectHideFlags: 0
@@ -9156,6 +9173,7 @@ GameObject:
   - component: {fileID: 195939709}
   - component: {fileID: 195939711}
   - component: {fileID: 195939712}
+  - component: {fileID: 195939713}
   m_Layer: 3
   m_Name: jungle (10)
   m_TagString: Untagged
@@ -9348,6 +9366,22 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
+--- !u!114 &195939713
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 195939707}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f425f360927e5f469e720f2983ac292, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  reactivateOnRespawn: 1
+  resetTransform: 1
+  resetRigidbodies: 1
+  callCustomResetHandlers: 1
 --- !u!1 &196511088
 GameObject:
   m_ObjectHideFlags: 0
@@ -15850,6 +15884,7 @@ GameObject:
   - component: {fileID: 263023104}
   - component: {fileID: 263023106}
   - component: {fileID: 263023107}
+  - component: {fileID: 263023108}
   m_Layer: 3
   m_Name: jungle (11)
   m_TagString: Untagged
@@ -16042,6 +16077,22 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
+--- !u!114 &263023108
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263023102}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f425f360927e5f469e720f2983ac292, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  reactivateOnRespawn: 1
+  resetTransform: 1
+  resetRigidbodies: 1
+  callCustomResetHandlers: 1
 --- !u!1 &263430180
 GameObject:
   m_ObjectHideFlags: 0
@@ -18408,6 +18459,7 @@ GameObject:
   - component: {fileID: 333795501}
   - component: {fileID: 333795503}
   - component: {fileID: 333795502}
+  - component: {fileID: 333795504}
   m_Layer: 3
   m_Name: jungle (3)
   m_TagString: Untagged
@@ -18547,6 +18599,22 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &333795504
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 333795500}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f425f360927e5f469e720f2983ac292, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  reactivateOnRespawn: 1
+  resetTransform: 1
+  resetRigidbodies: 1
+  callCustomResetHandlers: 1
 --- !u!1 &334583845
 GameObject:
   m_ObjectHideFlags: 0
@@ -18781,6 +18849,7 @@ GameObject:
   - component: {fileID: 334953354}
   - component: {fileID: 334953356}
   - component: {fileID: 334953357}
+  - component: {fileID: 334953358}
   m_Layer: 3
   m_Name: jungle (8)
   m_TagString: Untagged
@@ -18973,6 +19042,22 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
+--- !u!114 &334953358
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 334953352}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f425f360927e5f469e720f2983ac292, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  reactivateOnRespawn: 1
+  resetTransform: 1
+  resetRigidbodies: 1
+  callCustomResetHandlers: 1
 --- !u!1 &335983112
 GameObject:
   m_ObjectHideFlags: 0
@@ -21020,6 +21105,7 @@ GameObject:
   - component: {fileID: 387764361}
   - component: {fileID: 387764363}
   - component: {fileID: 387764364}
+  - component: {fileID: 387764365}
   m_Layer: 3
   m_Name: jungle (12)
   m_TagString: Untagged
@@ -21212,6 +21298,22 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
+--- !u!114 &387764365
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 387764359}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f425f360927e5f469e720f2983ac292, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  reactivateOnRespawn: 1
+  resetTransform: 1
+  resetRigidbodies: 1
+  callCustomResetHandlers: 1
 --- !u!4 &387819003 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 449424, guid: 4b3501afc9b1e564497adddaf2a1f90b, type: 3}
@@ -24432,6 +24534,7 @@ GameObject:
   - component: {fileID: 453315250}
   - component: {fileID: 453315252}
   - component: {fileID: 453315251}
+  - component: {fileID: 453315253}
   m_Layer: 3
   m_Name: jungle (5)
   m_TagString: Untagged
@@ -24571,6 +24674,22 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &453315253
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 453315249}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f425f360927e5f469e720f2983ac292, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  reactivateOnRespawn: 1
+  resetTransform: 1
+  resetRigidbodies: 1
+  callCustomResetHandlers: 1
 --- !u!1 &453379063
 GameObject:
   m_ObjectHideFlags: 0
@@ -29872,18 +29991,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 571732295}
   m_CullTransparentMesh: 1
---- !u!62 &572398943
-PhysicsMaterial2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: WaterBlobRuntime
-  serializedVersion: 2
-  friction: 0.1
-  bounciness: 0.24
-  m_FrictionCombine: 1
-  m_BounceCombine: 4
 --- !u!1 &587597602
 GameObject:
   m_ObjectHideFlags: 0
@@ -50280,6 +50387,7 @@ GameObject:
   - component: {fileID: 1072717419}
   - component: {fileID: 1072717421}
   - component: {fileID: 1072717422}
+  - component: {fileID: 1072717423}
   m_Layer: 3
   m_Name: jungle (6)
   m_TagString: Untagged
@@ -50472,6 +50580,22 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
+--- !u!114 &1072717423
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1072717417}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f425f360927e5f469e720f2983ac292, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  reactivateOnRespawn: 1
+  resetTransform: 1
+  resetRigidbodies: 1
+  callCustomResetHandlers: 1
 --- !u!1 &1073885271
 GameObject:
   m_ObjectHideFlags: 0
@@ -59942,7 +60066,7 @@ CircleCollider2D:
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
-  m_Material: {fileID: 572398943}
+  m_Material: {fileID: 2000329417}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -60431,9 +60555,9 @@ MonoBehaviour:
   backgroundSize: {x: 1920, y: 1080}
   backgroundPosition: {x: 0, y: 0}
   backgroundTint: {r: 1, g: 1, b: 1, a: 0.92}
-  optionsBackgroundSprite: {fileID: 0}
+  optionsBackgroundSprite: {fileID: 21300000, guid: 5d16fb2e295f4da41b7871784634591f, type: 3}
   optionsBackgroundTint: {r: 0.78, g: 0.9, b: 1, a: 0.92}
-  creditsBackgroundSprite: {fileID: 0}
+  creditsBackgroundSprite: {fileID: 21300000, guid: 5d16fb2e295f4da41b7871784634591f, type: 3}
   creditsBackgroundTint: {r: 1, g: 0.88, b: 0.76, a: 0.92}
   overlayColor: {r: 0, g: 0, b: 0, a: 0.38}
   titleText: ONE DROP
@@ -66432,6 +66556,7 @@ GameObject:
   - component: {fileID: 1396856008}
   - component: {fileID: 1396856010}
   - component: {fileID: 1396856009}
+  - component: {fileID: 1396856011}
   m_Layer: 3
   m_Name: jungle (1)
   m_TagString: Untagged
@@ -66571,6 +66696,22 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &1396856011
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1396856007}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f425f360927e5f469e720f2983ac292, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  reactivateOnRespawn: 1
+  resetTransform: 1
+  resetRigidbodies: 1
+  callCustomResetHandlers: 1
 --- !u!1 &1397534163
 GameObject:
   m_ObjectHideFlags: 0
@@ -81990,6 +82131,7 @@ GameObject:
   - component: {fileID: 1538297857}
   - component: {fileID: 1538297859}
   - component: {fileID: 1538297858}
+  - component: {fileID: 1538297860}
   m_Layer: 3
   m_Name: jungle (2)
   m_TagString: Untagged
@@ -82129,6 +82271,22 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &1538297860
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1538297856}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f425f360927e5f469e720f2983ac292, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  reactivateOnRespawn: 1
+  resetTransform: 1
+  resetRigidbodies: 1
+  callCustomResetHandlers: 1
 --- !u!1 &1539423186
 GameObject:
   m_ObjectHideFlags: 0
@@ -115381,6 +115539,7 @@ GameObject:
   - component: {fileID: 1993681562}
   - component: {fileID: 1993681564}
   - component: {fileID: 1993681565}
+  - component: {fileID: 1993681566}
   m_Layer: 3
   m_Name: jungle (7)
   m_TagString: Untagged
@@ -115573,6 +115732,22 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
+--- !u!114 &1993681566
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1993681560}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f425f360927e5f469e720f2983ac292, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  reactivateOnRespawn: 1
+  resetTransform: 1
+  resetRigidbodies: 1
+  callCustomResetHandlers: 1
 --- !u!1 &1996158151
 GameObject:
   m_ObjectHideFlags: 0
@@ -115660,6 +115835,18 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!62 &2000329417
+PhysicsMaterial2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: WaterBlobRuntime
+  serializedVersion: 2
+  friction: 0.1
+  bounciness: 0.24
+  m_FrictionCombine: 1
+  m_BounceCombine: 4
 --- !u!1 &2000481680
 GameObject:
   m_ObjectHideFlags: 0
@@ -115925,6 +116112,7 @@ GameObject:
   - component: {fileID: 2012257811}
   - component: {fileID: 2012257813}
   - component: {fileID: 2012257814}
+  - component: {fileID: 2012257815}
   m_Layer: 3
   m_Name: jungle (9)
   m_TagString: Untagged
@@ -116117,6 +116305,22 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
+--- !u!114 &2012257815
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2012257809}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f425f360927e5f469e720f2983ac292, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  reactivateOnRespawn: 1
+  resetTransform: 1
+  resetRigidbodies: 1
+  callCustomResetHandlers: 1
 --- !u!1 &2012413639
 GameObject:
   m_ObjectHideFlags: 0
@@ -117597,6 +117801,7 @@ GameObject:
   - component: {fileID: 2057815692}
   - component: {fileID: 2057815694}
   - component: {fileID: 2057815693}
+  - component: {fileID: 2057815695}
   m_Layer: 3
   m_Name: jungle (4)
   m_TagString: Untagged
@@ -117736,6 +117941,22 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &2057815695
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2057815691}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f425f360927e5f469e720f2983ac292, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  reactivateOnRespawn: 1
+  resetTransform: 1
+  resetRigidbodies: 1
+  callCustomResetHandlers: 1
 --- !u!1 &2057889828
 GameObject:
   m_ObjectHideFlags: 0
