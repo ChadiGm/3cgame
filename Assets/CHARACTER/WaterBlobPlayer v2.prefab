@@ -1,0 +1,662 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &385825927288609013
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1289970268265681005}
+  m_Layer: 0
+  m_Name: MouthPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1289970268265681005
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 385825927288609013}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0.38, y: 0.119999886, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3261324571407444901}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &7141965717303133325
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3261324571407444901}
+  - component: {fileID: 1600221711299490828}
+  - component: {fileID: 4489886833257267046}
+  - component: {fileID: 7891415353476400668}
+  - component: {fileID: 6039126669286123301}
+  - component: {fileID: 8543723824787683813}
+  - component: {fileID: 8838754904029715134}
+  - component: {fileID: 1891077338267384738}
+  - component: {fileID: 7543062347427138492}
+  - component: {fileID: 1222059557874738150}
+  - component: {fileID: 7742538004940815026}
+  - component: {fileID: 664461973846312951}
+  - component: {fileID: 9112825326954092492}
+  - component: {fileID: 3249781218293355111}
+  - component: {fileID: 1026113646115875984}
+  - component: {fileID: 5639734112192655438}
+  m_Layer: 0
+  m_Name: WaterBlobPlayer v2
+  m_TagString: Player
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3261324571407444901
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7141965717303133325}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -19.1, y: 2.17, z: 0}
+  m_LocalScale: {x: 0.8, y: 0.8, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1289970268265681005}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!50 &1600221711299490828
+Rigidbody2D:
+  serializedVersion: 5
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7141965717303133325}
+  m_BodyType: 0
+  m_Simulated: 1
+  m_UseFullKinematicContacts: 0
+  m_UseAutoMass: 0
+  m_Mass: 1
+  m_LinearDamping: 1.5
+  m_AngularDamping: 1.25
+  m_GravityScale: 3
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_Interpolate: 1
+  m_SleepingMode: 1
+  m_CollisionDetection: 1
+  m_Constraints: 0
+--- !u!58 &4489886833257267046
+CircleCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7141965717303133325}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0, y: 0}
+  m_Radius: 0.3
+--- !u!61 &7891415353476400668
+BoxCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7141965717303133325}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0, y: 0}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0, y: 0}
+    oldSize: {x: 0, y: 0}
+    newSize: {x: 0, y: 0}
+    adaptiveTilingThreshold: 0
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  m_Size: {x: 1, y: 1}
+  m_EdgeRadius: 0
+--- !u!33 &6039126669286123301
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7141965717303133325}
+  m_Mesh: {fileID: 0}
+--- !u!23 &8543723824787683813
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7141965717303133325}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 0}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!120 &8838754904029715134
+LineRenderer:
+  serializedVersion: 3
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7141965717303133325}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 0
+  m_LightProbeUsage: 0
+  m_ReflectionProbeUsage: 0
+  m_RayTracingMode: 0
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 0}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_Positions:
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 1}
+  m_Parameters:
+    serializedVersion: 3
+    widthMultiplier: 1
+    widthCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.33333334
+        outWeight: 0.33333334
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    colorGradient:
+      serializedVersion: 2
+      key0: {r: 1, g: 1, b: 1, a: 1}
+      key1: {r: 1, g: 1, b: 1, a: 1}
+      key2: {r: 0, g: 0, b: 0, a: 0}
+      key3: {r: 0, g: 0, b: 0, a: 0}
+      key4: {r: 0, g: 0, b: 0, a: 0}
+      key5: {r: 0, g: 0, b: 0, a: 0}
+      key6: {r: 0, g: 0, b: 0, a: 0}
+      key7: {r: 0, g: 0, b: 0, a: 0}
+      ctime0: 0
+      ctime1: 65535
+      ctime2: 0
+      ctime3: 0
+      ctime4: 0
+      ctime5: 0
+      ctime6: 0
+      ctime7: 0
+      atime0: 0
+      atime1: 65535
+      atime2: 0
+      atime3: 0
+      atime4: 0
+      atime5: 0
+      atime6: 0
+      atime7: 0
+      m_Mode: 0
+      m_ColorSpace: -1
+      m_NumColorKeys: 2
+      m_NumAlphaKeys: 2
+    numCornerVertices: 0
+    numCapVertices: 0
+    alignment: 0
+    textureMode: 0
+    textureScale: {x: 1, y: 1}
+    shadowBias: 0.5
+    generateLightingData: 0
+  m_UseWorldSpace: 1
+  m_Loop: 0
+  m_ApplyActiveColorSpace: 1
+--- !u!114 &1891077338267384738
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7141965717303133325}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 632b566332efc4944884c39b5f6cf7ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WaterBlob.WaterBlobCharacter2D
+  pointCount: 24
+  radius: 1
+  coreColliderRadius: 0.3
+  pointColliderRadius: 0.2
+  rebuildOnStart: 1
+  coreMass: 1
+  pointMass: 0.3
+  gravityScale: 3
+  coreLinearDamping: 1.5
+  coreAngularDamping: 1.25
+  pointLinearDamping: 1.25
+  pointAngularDamping: 2.2
+  coreSpringFrequency: 8
+  coreSpringDamping: 0.9
+  ringSpringFrequency: 7.4
+  ringSpringDamping: 0.78
+  useSecondaryRingSprings: 1
+  secondarySpringFrequency: 4.3
+  secondarySpringDamping: 0.82
+  radialStiffness: 12
+  radialDamping: 8.5
+  pointVelocityCarry: 0.2
+  maxPointCarrySpeed: 8
+  bounciness: 0.24
+  friction: 0.1
+--- !u!114 &7543062347427138492
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7141965717303133325}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 222e387dbd6d7344996b3a02e0e6ee22, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WaterBlob.WaterBlobMeshRenderer2D
+  blob: {fileID: 1891077338267384738}
+  waterResource: {fileID: 3249781218293355111}
+  fillColor: {r: 0.19, g: 0.72, b: 1, a: 0.87058824}
+  edgeColor: {r: 0.87058824, g: 0.95, b: 1, a: 1}
+  edgeWidth: 0.08
+  smoothing: 0.42
+  sortingOrder: 10
+  useWaterResourceFill: 1
+  manualFill: 1
+--- !u!114 &1222059557874738150
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7141965717303133325}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6300ad2dc7aa74843a06c850b2faf821, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WaterBlob.WaterBlobGooglyEyes2D
+  blob: {fileID: 0}
+  normalizedOffset: {x: 0.34, y: 0.1}
+  anchorFollow: 16
+  anchorRotationInfluence: 0.45
+  depth: -0.28
+  eyeSeparation: 0.5
+  eyeRadius: 0.2
+  pupilRadius: 0.08
+  eyeRotationInfluence: 0.38
+  maxEyeTiltDeg: 28
+  eyeRotationFollow: 14
+  eyeDirectionalLeanBoost: 1.35
+  invertEyeDirection: 1
+  pupilRange: 0.09
+  pupilFollow: 16
+  lookVelocityScale: 0.2
+  jitterAmount: 0.018
+--- !u!114 &7742538004940815026
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7141965717303133325}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: faac0c755f98779498e89789c6f40178, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WaterBlob.WaterBlobInput2D
+  riseRate: 8.5
+  fallRate: 12.5
+  stickDeadzone: 0.18
+--- !u!114 &664461973846312951
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7141965717303133325}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e149ba5d64d54d7439c08d1a280a7dd8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WaterBlob.OneDropController2D
+  visualRoot: {fileID: 0}
+  vfxController: {fileID: 0}
+  moveVfxSpeedThreshold: 0.15
+  moveVfxStopDelay: 0.12
+  movementSfxSource: {fileID: 0}
+  actionSfxSource: {fileID: 0}
+  movementSfxClip: {fileID: 0}
+  movementSfxLeftClip: {fileID: 0}
+  movementSfxRightClip: {fileID: 0}
+  jumpSfxClip: {fileID: 0}
+  slideSfxClip: {fileID: 0}
+  movementSfxVolume: 0.6
+  jumpSfxVolume: 0.8
+  slideSfxVolume: 0.85
+  movementSfxFadeIn: 0.08
+  movementSfxFadeOut: 0.18
+  movementSfxPlayWhileSliding: 0
+  movementSfxRequireGrounded: 1
+  muteMovementLoopDuringActionSfx: 1
+  actionSfxMoveLoopMuteExtraTime: 0.04
+  moveSpeed: 20
+  acceleration: 30
+  minAccelerationFromSpeed: 4
+  jumpForce: 50
+  postJumpGroundIgnoreTime: 0.1
+  minJumpInterval: 0.1
+  jumpPointImpulseScale: 0.22
+  wallJumpPointImpulseScale: 0.18
+  overrideRigidbodyDamping: 1
+  linearDamping: 0
+  angularDamping: 0.05
+  doubleTapWindow: 0.25
+  slideSpeed: 30
+  slideDuration: 0.18
+  slideCooldown: 0.25
+  climbSpeed: 8
+  climbAcceleration: 55
+  climbMinAccelFromSpeed: 4
+  wallJumpHorizontalForce: 9.5
+  wallJumpVerticalForce: 11
+  gravityWhenNotClimbing: 3
+  climbableWallMask:
+    serializedVersion: 2
+    m_Bits: 512
+  allowWallJumpWhileClimbing: 1
+  allowDetachByPressingAway: 1
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 264
+  wallMask:
+    serializedVersion: 2
+    m_Bits: 64
+  groundCheckDistance: 0.12
+  wallCheckDistance: 0.45
+  groundProbeHeightFactor: 0.22
+  castWidthFactor: 0.95
+  castHeightFactor: 0.95
+  jumpMaxGroundAngle: 65
+  rotationLerpSpeed: 12
+  maxGroundAngle: 35
+  sideNormalMinX: 0.72
+  sideNormalMaxY: 0.45
+  idleGroundSquash: 0.08
+  idleGroundSpread: 0.06
+  runSquash: 0.12
+  accelerationStretch: 0.1
+  decelerationSquash: 0.12
+  jumpStretch: 0.2
+  fallStretch: 0.16
+  jumpPreCompress: 0.16
+  landingSquash: 0.22
+  landingMinImpactSpeed: 6
+  peakStretch: 0.08
+  slopeAdaptiveSquash: 0.08
+  wallAdhesionFlatten: 0.12
+  wallAdhesionStretch: 0.1
+  wallDetachStretch: 0.12
+  visualMomentumOffset: 0.09
+  movementResponseDelay: 0.06
+  deformationSpring: 58
+  deformationDamping: 10
+  wobbleSpring: 44
+  wobbleDamping: 7.5
+  accelerationWobble: 0.05
+  impactWobble: 0.12
+  maxWobble: 0.24
+  ceilingMask:
+    serializedVersion: 2
+    m_Bits: 0
+  ceilingCheckDistance: 0.14
+  minVisualHeightScale: 0.82
+  ceilingCompressionDampen: 0.25
+  ceilingSpreadDampen: 0.55
+--- !u!114 &9112825326954092492
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7141965717303133325}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9868fdf15a879484b9c8e5caef87a008, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  firePoint: {fileID: 1289970268265681005}
+  bulletPrefab: {fileID: 3903840158125997201, guid: 09b37b94458ba74408a8645f2d0ecdef, type: 3}
+  gunSprite: {fileID: 7141965717303133325}
+  bulletSpeed: 20
+  shootCooldown: 0.12
+  bulletLifetime: 4
+  muzzleEffectPrefab: {fileID: 947802411668117706, guid: 6323ce8a4fdd97d4999e8f352cd48d20, type: 3}
+  impactEffectPrefab: {fileID: 5898152396035307993, guid: 01cccd02d2de05d44b4f441003a4c2ea, type: 3}
+  vaporizationEffectPrefab: {fileID: 104829970813648393, guid: d3015b7eea383f64d8b81f965cc466e7, type: 3}
+  giveBloblVisualToBullet: 1
+  bulletAttackableLayers:
+    serializedVersion: 2
+    m_Bits: 128
+  bulletNonDestructibleLayers:
+    serializedVersion: 2
+    m_Bits: 64
+  bulletIgnoredLayers:
+    serializedVersion: 2
+    m_Bits: 1
+  touchEnemyLayers:
+    serializedVersion: 2
+    m_Bits: 128
+  touchFullDamageLayers:
+    serializedVersion: 2
+    m_Bits: 1280
+  fullDamageIgnoresInvulnerability: 1
+  maxHealth: 3
+  touchInvulnerabilityTime: 0.75
+  playerDamageEffectPrefab: {fileID: 0}
+  damageFlashColor: {r: 1, g: 0.25, b: 0.25, a: 0.9}
+--- !u!114 &3249781218293355111
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7141965717303133325}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d853de1ebb969e4a8640128e82921fb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealthPoints: 4
+  gameRestartDelay: 0.6
+  maxWater: 500
+  moveDrainPerSecond: 3.5
+  moveSpeedThreshold: 0.2
+  jumpDrain: 10
+  slideDrain: 12
+  shootDrain: 6
+  damageDrain: 20
+  deathVaporEffectPrefab: {fileID: 985483039366664255, guid: f91edac4d13fc4343ba96bb6a843ad05, type: 3}
+  disableDelay: 0.15
+  respawnDelay: 3
+  useCheckpointManager: 1
+  checkpointManager: {fileID: 0}
+  debugRespawnLogs: 0
+--- !u!114 &1026113646115875984
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7141965717303133325}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c83e887b032de7949820adee20f8db66, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  useTriggers: 1
+  useCollisions: 1
+--- !u!114 &5639734112192655438
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7141965717303133325}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b2d17a8e311c4703bdb59dfa17113f3b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  shrinkScale: 0.85
+  duration: 0.18
+  shakeOffset: 0.06
+  shakeFrequency: 18

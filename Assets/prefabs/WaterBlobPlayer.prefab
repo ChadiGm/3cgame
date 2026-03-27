@@ -440,6 +440,25 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WaterBlob.OneDropController2D
   visualRoot: {fileID: 0}
+  vfxController: {fileID: 0}
+  moveVfxSpeedThreshold: 0.15
+  moveVfxStopDelay: 0.12
+  movementSfxSource: {fileID: 0}
+  actionSfxSource: {fileID: 0}
+  movementSfxClip: {fileID: 0}
+  movementSfxLeftClip: {fileID: 0}
+  movementSfxRightClip: {fileID: 0}
+  jumpSfxClip: {fileID: 0}
+  slideSfxClip: {fileID: 0}
+  movementSfxVolume: 0.6
+  jumpSfxVolume: 0.8
+  slideSfxVolume: 0.85
+  movementSfxFadeIn: 0.08
+  movementSfxFadeOut: 0.18
+  movementSfxPlayWhileSliding: 0
+  movementSfxRequireGrounded: 1
+  muteMovementLoopDuringActionSfx: 1
+  actionSfxMoveLoopMuteExtraTime: 0.04
   moveSpeed: 24
   acceleration: 30
   minAccelerationFromSpeed: 4
@@ -624,6 +643,9 @@ MonoBehaviour:
   loseWobbleDegrees: 14
   loseOvershoot: 0.2
   restoreAnimDuration: 0.2
+  hideWhenPaused: 1
+  hideWhenGameOver: 1
+  hideWhenGameplayInputBlocked: 1
 --- !u!114 &7089811447329304653
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -664,10 +686,14 @@ MonoBehaviour:
   timerPulseFrequency: 1.65
   timerWobbleDegrees: 0.7
   timerWobbleFrequency: 0.95
+  rebuildPauseMenuFromScratchAtRuntime: 1
   pausePanel: {fileID: 0}
   pauseResumeButton: {fileID: 0}
   pauseRestartButton: {fileID: 0}
+  pauseSoundButton: {fileID: 0}
   pauseExitButton: {fileID: 0}
+  pauseSoundPanel: {fileID: 0}
+  pauseSoundBackButton: {fileID: 0}
   gameOverPanel: {fileID: 0}
   gameOverTimeLabel: {fileID: 0}
   gameOverRestartButton: {fileID: 0}
@@ -676,6 +702,9 @@ MonoBehaviour:
   gameOverMusicSource: {fileID: 0}
   buttonClickSoundSource: {fileID: 0}
   navigationSoundSource: {fileID: 0}
+  sfxVolumeSlider: {fileID: 0}
+  musicVolumeSlider: {fileID: 0}
+  sfxSliderPreviewInterval: 0.08
 --- !u!1 &5650506878966333001
 GameObject:
   m_ObjectHideFlags: 0

@@ -106,6 +106,19 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
@@ -153,6 +166,28 @@ TextureImporter:
       indices: 
       edges: []
       weights: []
+    - serializedVersion: 2
+      name: ChatGPT Image Mar 16, 2026, 11_26_19 AM 2_0
+      rect:
+        serializedVersion: 2
+        x: 270
+        y: 680
+        width: 325
+        height: 83
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1fc4d0f9baa799048a014a3bddfcc9cb
+      internalID: 424650979
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
     outline: []
     customData: 
     physicsShape: []
@@ -169,6 +204,7 @@ TextureImporter:
     nameFileIdTable:
       ChatGPT Image Mar 16, 2026, 11_26_19 AM 1_0: 1636596718
       ChatGPT Image Mar 16, 2026, 11_26_19 AM 1_1: 372113930
+      ChatGPT Image Mar 16, 2026, 11_26_19 AM 2_0: 424650979
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

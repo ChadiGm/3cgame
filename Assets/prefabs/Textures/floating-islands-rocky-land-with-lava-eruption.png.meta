@@ -106,6 +106,19 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
@@ -113,12 +126,12 @@ TextureImporter:
       name: floating-islands-rocky-land-with-lava-eruption_0
       rect:
         serializedVersion: 2
-        x: 47
-        y: 768
-        width: 975
-        height: 681
+        x: 42
+        y: 610
+        width: 862
+        height: 794
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -127,6 +140,50 @@ TextureImporter:
       bones: []
       spriteID: 4c6a9405a0f8c4e4d8e8b73b21faa9f6
       internalID: 1981370877
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: floating-islands-rocky-land-with-lava-eruption_1
+      rect:
+        serializedVersion: 2
+        x: 1080
+        y: 969
+        width: 875
+        height: 913
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e092e9067e75cc04bb04c85d6de5a1a3
+      internalID: -46168520
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: floating-islands-rocky-land-with-lava-eruption_2
+      rect:
+        serializedVersion: 2
+        x: 832
+        y: 0
+        width: 1076
+        height: 727
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9911a74401f6075499f2f8e2060d51fc
+      internalID: -1033769272
       vertices: []
       indices: 
       edges: []
@@ -146,6 +203,8 @@ TextureImporter:
       entries: []
     nameFileIdTable:
       floating-islands-rocky-land-with-lava-eruption_0: 1981370877
+      floating-islands-rocky-land-with-lava-eruption_1: -46168520
+      floating-islands-rocky-land-with-lava-eruption_2: -1033769272
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
