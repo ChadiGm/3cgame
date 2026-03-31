@@ -744,6 +744,8 @@ MonoBehaviour:
   gameOverMusicSource: {fileID: 0}
   buttonClickSoundSource: {fileID: 0}
   navigationSoundSource: {fileID: 0}
+  useSharedButtonSfxForNavigation: 1
+  defaultMenuButtonSfx: {fileID: 0}
   sfxVolumeSlider: {fileID: 0}
   musicVolumeSlider: {fileID: 0}
   sfxSliderPreviewInterval: 0.08

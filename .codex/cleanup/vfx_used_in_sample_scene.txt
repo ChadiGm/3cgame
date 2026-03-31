@@ -1,0 +1,10 @@
+
+Assets\prefabs\Farming_game_FX\Prefabs\Farming\FX_Dig.prefab
+Assets\prefabs\msVFX_Free Smoke Effects Pack\Prefabs\msVFX_Stylized Smoke 1.prefab
+Assets\prefabs\msVFX_Free Smoke Effects Pack\Prefabs\msVFX_Stylized Smoke 2.prefab
+Assets\prefabs\NamuFX\StylizedWaterEffects\Prefabs\Bubbles_Vertical_Loop.prefab
+Assets\prefabs\NamuFX\StylizedWaterEffects\Prefabs\Water_Explosion.prefab
+Assets\prefabs\NamuFX\StylizedWaterEffects\Prefabs\Water_Impact.prefab
+Assets\prefabs\NamuFX\StylizedWaterEffects\Prefabs\Water_Splash_A.prefab
+Assets\prefabs\NamuFX\StylizedWaterEffects\Prefabs\Water_Splash_B.prefab
+Assets\prefabs\Toon Crystals pack\Particles\BlueGlow.prefab
